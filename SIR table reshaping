@@ -15,31 +15,35 @@ testsH<-read.table("8tests.csv",header=TRUE,sep= ",")
 tests<- rbind(testsA,testsB,testsC,testsD,testsE,testsF,testsG,testsH)
 write.csv(tests,file="tests.csv")
 #In our analysis it was only possible to load data in multiple files:
-#rbind, then save a copy for future analysis
+#Only need to do this once: rbind, save a copy for future analysis
 #################################################################################################
 
 Patients<-read.table("Patients.csv",header=TRUE, sep=",")
 tests<-read.table("tests.csv",header=TRUE,sep= ",")
-#Check same number
-levels(as.factor(tests$PatID))
+SIR<- merge(Patients,tests,all=TRUE, by='PatID')
 levels(as.factor(SIR$PatID))
 #78630
-SIR<- merge(Patients,tests,all=TRUE, by='PatID')
 
+#create new vectors for age, hospital/GP (Full dob not provided)
 SIR$Age<-(as.numeric(year(strptime(SIR$EntryDate, format="%d/%m/%Y"))))-SIR$Year_Of_Birth
 attach(SIR)
+
+#select data from individuals aged 15 and over
 Over<-subset(SIR,SIR$Age>15 & as.numeric(year(strptime(SIR$EntryDate, format="%d/%m/%Y")))>=2009,)
 Over$location<- ifelse(Over$Source=="salfordt", c("Hospital"),("GP"))
 attach(Over)
+
+#Group related read codes
 levels(Over$ReadCode)
-#Group redundant read codes/rubrics
 levels(Over$ReadCode)[1:23] <- "dialysisorckd"
 levels(Over$ReadCode)[3:7] <- "eGFR"
 levels(Over$ReadCode)[4:5] <- "transplant"
 levels(Over$ReadCode)[2] <- "creatinine"
 levels(Over$ReadCode)[5:12] <- "dialysisorckd"
 table(Over$ReadCode)
+#Check these manually every time you re-extract/resubset as they will change
 attach(Over)
+
 #Drop all records entered after commencement of dialysis/transplant
 Over$endpoint<-with(Over, ifelse(ReadCode=="dialysisorckd",paste(EntryDate), "NA"))
 Over$endpoint<-with(Over, ifelse(ReadCode=="transplant",paste(EntryDate), paste(endpoint)))
