@@ -47,9 +47,24 @@ attach(Over)
 
 #Assign more options
 options(expressions=20000)
+Over$EntryDate<-as.Date(as.character(Over$EntryDate), format="%d/%m/%Y")
 quant<-Over[Over$ReadCode=="creatinine" &as.numeric(Over$Value)>0 & as.numeric(year(strptime(Over$EntryDate, format="%Y-%m-%d")))==2012,]
 table(quant$ReadCode)
-#Gives the number of creatinine values for the index year prior to data cleansing
+#Gives the number of creatinine values for the index year prior to data cleansing (284309)
+
+#Check which units have been used to measure Creatinine and convert #from mg/dL to umol/L if needed
+levels(Over$Units)
+levels(Over$Units)[c(9:18,39,44,47)]<- "mLmin173m2"
+
+
+
+levels(Over$Units)[7]<-"umol/L"
+table(Over$ReadCode,Over$Units)
+Over$stcreat<- ifelse(Over$Units=="umol/L"| Over$Units=="None",Over$Value,(Over$Value/1000)) 
+Over$stcreat<- ifelse(Over$ReadCode=="creatinine",paste(Over$stcreat), paste("NA")) 
+
+Over$mdrd<- ifelse(Over$Units=="mLmin173m2"| Over$Units=="None",paste(Over$Value),paste(Over$value/1440)) 
+Over$mdrd<- ifelse(Over$ReadCode=="eGFR",paste(Over$mdrd), paste("NA"))
 
 
 
@@ -96,31 +111,6 @@ Over<-Over[is.na(Over$date_diff)|Over$date_diff>=0, ]
 
 #This gives you a subset of records for patients before CKD, transplant or dialysis
 
-#Check which units have been used to measure Creatinine and convert #from mg/dL to umol/L if needed
-table(Over$Units)
-levels(Over$Units)
-
-head(Over[Over$Units=="%",])
-levels(Over$Units)[1]<-"mLmin173m2"
-levels(Over$Units)[13:22]<-"mLmin173m2"
-
-table(Over$Units)
-
-tail(Over[Over$Units=="/min",])
-levels(Over$Units)[4]<-"mLmin173m2"
-levels(Over$Units)[8]<-"mLmin173m2"
-table(Over$Units)
-
-unique(Over$Desc[Over$Units=="/mL"])
-levels(Over$Units)[4]<-"mLmin173m2"
-levels(Over$Units)[7]<-"umol/L"
-
-table(Over$ReadCode,Over$Units)
-Over$stcreat<- ifelse(Over$Units=="umol/L"| Over$Units=="None",Over$Value,(Over$Value/1000)) 
-Over$stcreat<- ifelse(Over$ReadCode=="creatinine",paste(Over$stcreat), paste("NA")) 
-
-Over$mdrd<- ifelse(Over$Units=="mLmin173m2"| Over$Units=="None",paste(Over$Value),paste(Over$value/1440)) 
-Over$mdrd<- ifelse(Over$ReadCode=="eGFR",paste(Over$mdrd), paste("NA"))
 
 #Check for and delete delayed duplicates
 class(EntryDate)
