@@ -20,6 +20,10 @@ write.csv(tests,file="tests.csv")
 
 Patients<-read.table("Patients.csv",header=TRUE, sep=",")
 tests<-read.table("tests.csv",header=TRUE,sep= ",")
+#Check same number
+levels(as.factor(tests$PatID))
+levels(as.factor(SIR$PatID))
+#78630
 SIR<- merge(Patients,tests,all=TRUE, by='PatID')
 
 SIR$Age<-(as.numeric(year(strptime(SIR$EntryDate, format="%d/%m/%Y"))))-SIR$Year_Of_Birth
