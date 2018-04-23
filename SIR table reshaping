@@ -94,6 +94,88 @@ levels(as.factor(Over$endpoint))
 Over$EntryDate<-as.Date(Over$EntryDate, format="%d/%m/%Y")
 Over$endpoint<-as.Date(Over$endpoint, format="%Y-%m-%d")
 
+#Set up a small table which is just a list of RRT patients and their start RRT dates
+smalltab<-Over[!is.na(Over$endpoint),]
+smalltab<-smalltab[order(smalltab$endpoint),]
+smalltab<-smalltab[,c(“PatID”,”endpoint”)]
+smalltab$PatID
+#Subset of 266 renal Patients
+#Order by first rrt/transplant record
+
+each <- unique(smalltab$PatID)
+a<-length(each)
+first <- c()
+for (i in 1:a) {  temp<-subset(smalltab, PatID==each[i])
+if (dim(temp)[1] < 1) {
+earliest<-temp[dim(temp)[1],]}
+else {earliest<-temp}
+first<-rbind(first, earliest)}
+head(first)
+#first lists earliest instance of dialysis/transplant by PatID
+
+#Create a table of unique PatIDs not related to RRT
+xtab<-Over[is.na(Over$endpoint),c(“PatID”,”endpoint”)]
+dupna<-duplicated(xtab[,c(1)])
+xbtab<-xtab[!dupna,]
+
+#Join to give 1 list of all PatIDs and end dates if relevant
+P<-rbind(first,xbtab)
+length(levels(as.factor(P$PatID))) #77537, 77381
+length(levels(as.factor(first$PatID))) #132
+length(levels(as.factor(xbtab$PatID))) #77536, 77380
+dupnp<-duplicated(P[,c(1)])
+P<-P[!dupnp,]
+
+#Merge P onto original table
+Over2<- merge(Over,P,by='PatID')
+levels(as.factor(Over2$PatID))
+#77537
+#endpoint is now added to all records of RRT patients
+which(!is.na(Over2$endpoint.y))
+Over2$rrt<- as.numeric((Over2$EntryDate)-(Over2$endpoint.y))
+
+length(Over2$PatID)
+Over2<-Over2[Over2$rrt>0|is.na(Over2$rrt),]
+length(levels(as.factor(Over2$PatID)))
+#75530 patients
+
+#Remove all dialysis/transplant records after start of dialysis
+table(Over2$ReadCode)
+Over2<-Over2[Over2$ReadCode=="creatinine"|Over2$ReadCode=="eGFR",]
+table(Over2$ReadCode)
+indexnorrt<-subset(Over2,as.numeric(year(strptime(Over2$EntryDate, format="%Y-%m-%d")))==2012,)
+indexd<-indexnorrt[indexnorrt$ReadCode=="creatinine",]
+length(indexd$PatID)
+
+quant2<-Over2[Over2$ReadCode=="creatinine" &Over2$Value>0 & as.numeric(year(strptime(Over2$EntryDate, format="%Y-%m-%d")))==2012,]
+table(quant2$ReadCode)
+#Gives the number of creatinine values for the index year
+#after renal patient test removal
+
+#REMOVE DUPLICATES WITHIN THE SAME CALENDAR MONTH
+#Delete all duplicates within the same calendar month
+Over2$stcreat<-as.numeric(Over2$stcreat)
+Over2$PatID<-as.numeric(Over2$PatID)
+Over2<-Over2[order(Over2$PatID,rev(Over2$EntryDate)),]
+d<-duplicated(Over2[,c("PatID","EntryPeriod","stcreat")])
+Over2<-Over2[!d,]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
