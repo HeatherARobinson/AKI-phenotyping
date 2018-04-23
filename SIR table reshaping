@@ -1,5 +1,4 @@
 Prior preprocesing: In excel, removed # symbols, removed start tabs from indented rows and edited rows with value in units column.
-#Remove codes 443J1,443J2,443J200,44J3z00 which do not contain numeric data
 
 setwd("c:/Users/mqbpjhr4/Documents")
 Patients<-read.table("Patients.csv",header=TRUE, sep=",")
