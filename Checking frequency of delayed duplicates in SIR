@@ -1,0 +1,85 @@
+library(lubridate)
+Patients<-read.table("Patients.csv",header=TRUE, sep=",")
+tests<-read.table("tests.csv",header=TRUE,sep= ",")
+SIR<- merge(Patients,tests,all=TRUE, by='PatID')
+
+# SELECT COHORT UNDER STUDY
+SIR$Age<-(as.numeric(year(strptime(SIR$EntryDate, format="%d/%m/%Y"))))-SIR$Year_Of_Birth
+attach(SIR)
+Over<-subset(SIR,SIR$Age>15 & as.numeric(year(strptime(SIR$EntryDate, format="%d/%m/%Y")))>=2009,)
+Over$location<- ifelse(Over$Source=="salfordt", c("Hospital"),("GP"))
+attach(Over)
+levels(ReadCode)
+
+# SELECT RECORDS INDICATING CONFOUNDERS
+levels(Over$ReadCode)[1:23] <- "dialysisorckd"
+levels(Over$ReadCode)[3:6] <- "eGFR"
+levels(Over$ReadCode)[4:7] <- "transplant"
+levels(Over$ReadCode)[2] <- "creatinine"
+levels(Over$ReadCode)[5:14] <- "dialysisorckd"
+table(Over$ReadCode)
+attach(Over)
+
+#DROP RECORDS AFTER CONFOUNDING EVENT CODE RECORDED
+Over$endpoint<-with(Over, ifelse(ReadCode=="dialysisorckd",paste(EntryDate), "NA"))
+Over$endpoint<-with(Over, ifelse(ReadCode=="transplant",paste(EntryDate), paste(endpoint)))
+table(Over$EntryDate)
+Over$date_diff <- ifelse(!is.na(Over$endpoint), 
+(as.Date
+(as.character(Over$endpoint), format="%Y/%m/%d")-as.Date(as.character(Over$EntryDate), format="%d/%m/%Y")
+), print("NA"))
+Over<-Over[-which(Over$date_diff<0), ]
+#'OVER' CONTAINS A SUBSET OF PATIENT RECORDS PRIOR TO ANY CONFOUNDING EVENT BEING RECORDED FOR THOSE INDIVIDUALS
+
+# ASSESS PRESENT CREATININE UNITS AND CONVERT VALUES TO MG/DL IF NEEDED
+levels(Over$Units)
+levels(Over$Units)[c(8,25)]<-"umolOL"
+levels(Over$Units)[c(7,12:21)]<-"mLmin173m2"
+table(Over$ReadCode,Over$Units)
+levels(Over$Units)[c(7,12:21)]<-"mLmin173m2"
+table(Over$ReadCode,Over$Units)
+levels(Over$Units)[c(9,10)]<-"mLmin173m2"
+
+Over$stcreat<- ifelse(Over$Units=="umolOL"| Over$Units=="None",Over$Value,(Over$Value/1000)) 
+Over$stcreat<- ifelse(Over$ReadCode=="creatinine",paste(Over$stcreat), paste("NA")) 
+
+# ASSESS PRESENT EGFR UNITS AND CONVERT VALUES TO MG/DL IF NEEDED
+
+Over$mdrd<- ifelse(Over$Units=="mLmin173m2",paste(Over$Value),paste(Over$value/1440)) 
+Over$mdrd<- ifelse(Over$ReadCode=="eGFR",paste(Over$mdrd), paste("NA"))
+class(EntryDate)
+Over$EntryDate<-as.Date(Over$EntryDate, format="%d/%m/%Y")
+Over<-Over[!is.na(Over$stcreat),]
+
+# OPTIONAL CODES FOR USE IN REMOVING DELATED DUPLICATE ENTRIES INTRODUCED THROUGH RECORD TRANSFER BETWEEN SYSTEMS
+
+#Call the first row of each duplicated pair:
+a<-Over[duplicated(Over$Value)&duplicated(Over$PatID)&!duplicated(Over$Source),c("PatID","ReadCode","stcreat","EntryDate")]
+names(a)<-c("PatID","ReadCode","stcreat","DupDate")
+
+#Use the dates of the original duplicated entries as a key to find delayed copies
+a<-a[a$ReadCode=="creatinine",]
+
+#Neardate match each original date to the first duplicate
+
+Over<-merge(Over,a,all.x=TRUE)
+attach(Over)
+Over$delay<-as.numeric(difftime(strptime(DupDate,"%Y-%m-%d"),strptime(EntryDate,"%Y-%m-%d"),units="days"))
+length(Over$delay[Over$delay==0])
+length(Over$delay[Over$delay==1])
+length(Over$delay[Over$delay>1 & Over$delay<=30])
+length(Over$delay[Over$delay>30 & Over$delay<=60])
+
+
+#If the test location remains the same:
+b<-Over[duplicated(Over$Value)&duplicated(Over$PatID),c("PatID","ReadCode","stcreat","EntryDate")]
+names(b)<-c("PatID","ReadCode","stcreat","DupDate2")
+
+b<-b[b$ReadCode=="creatinine",]
+Over<-merge(Over,b[,c(1,3,4)],all.x=TRUE)
+attach(Over)
+Over$delay2<-as.numeric(difftime(strptime(DupDate2,"%Y-%m-%d"),strptime(EntryDate,"%Y-%m-%d"),units="days"))
+length(Over$delay2[Over$delay2==0])
+length(Over$delay2[Over$delay2==1])
+length(Over$delay2[Over$delay2>1 & Over$delay2<=30])
+length(Over$delay2[Over$delay2>30 & Over$delay2<=60])
