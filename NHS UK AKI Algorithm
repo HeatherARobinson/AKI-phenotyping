@@ -1,0 +1,110 @@
+#FROM PF. PLEASE NOTE THIS DIFFERS FROM THE ABERDEEN ALGORITHM
+
+check_AKI_national_algorithm=function(ID, # Patient ID
+                                     Date, # Date of creatinine measurement
+                                     c1, # value of creatinine measurment
+                                     sex, # gender of the patient
+                                     data # dataset with all creatinine data
+){
+  # get only data within one year from Date for the patient
+  data=data[PatID==ID & EntryDate<Date & EntryDate>=(Date-365)]
+  # initialise flag
+  flag="No result"
+  # most recent first
+  data=data[order(EntryDate,decreasing = TRUE)]
+  
+  # assign gender specific ref range
+  ref.up=ref.low=NULL
+  if(sex=="M"){
+    
+    ref.low=62
+    ref.up=115
+    
+  } else {
+    
+    ref.low=44
+    ref.up=97
+    
+  }
+  # if there is data in one year
+  if(dim(data)[1]>0){
+    # calculate difference between values
+    data$Diff=as.numeric(data$EntryDate-Date)
+    # if results in the last 7 days
+    rv1.diff=rv1=NULL
+    if(sum(data$Diff<=7)>0){
+      # min value in the last 7 days
+      tmp=data[Diff<=7]
+      rv1=min(tmp$CodeValue)
+      rv1.diff=tmp[which.min(CodeValue)]$Diff
+    } else {
+      # median in the last year
+      rv1=median(data$CodeValue)
+      rv1.diff=8
+    }
+    # calculate ratio
+    rv=c1/rv1
+    # check ratio
+    if(rv>=1.5){
+      
+      if(c1>354 | rv>=3){
+        
+        flag="AKI3"
+        
+      } else if(rv>=2 & rv<3){
+        
+        flag="AKI2"
+        
+      } else {
+        
+        flag="AKI1"
+        
+      }
+      
+    } else{
+      
+      if(rv1.diff<=2){
+        
+        if((c1-rv1)>26){
+          
+          flag="AKI1"
+          
+        } else {
+          
+          flag="No alert"
+          
+        }
+        
+      } else{
+        
+        if((c1-rv1)>26){
+          
+          flag="Increase 26 no alert"
+          
+        }
+        
+      }
+      
+    }
+    
+  } else{
+    
+    if(between(x = c1,lower = ref.low,upper = ref.up)){
+      
+      flag="Normal"
+      
+    } else if(c1<ref.low){
+      
+      flag="Low"
+      
+    } else{
+      
+      flag="High"
+      
+    }
+    
+  }
+  
+  flag
+  
+}
