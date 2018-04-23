@@ -55,11 +55,10 @@ table(quant$ReadCode)
 #Check which units have been used to measure Creatinine and convert #from mg/dL to umol/L if needed
 levels(Over$Units)
 levels(Over$Units)[c(9:18,39,44,47)]<- "mLmin173m2"
+levels(Over$Units)[c(6,17:19,28,33)]<-"umol/L"
+table(Over$Units,Over$ReadCode)
+levels(Over$Units)[c(1,5,7,13:16,27)]<- "mLmin173m2"
 
-
-
-levels(Over$Units)[7]<-"umol/L"
-table(Over$ReadCode,Over$Units)
 Over$stcreat<- ifelse(Over$Units=="umol/L"| Over$Units=="None",Over$Value,(Over$Value/1000)) 
 Over$stcreat<- ifelse(Over$ReadCode=="creatinine",paste(Over$stcreat), paste("NA")) 
 
