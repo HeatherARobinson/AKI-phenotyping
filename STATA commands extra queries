@@ -1,0 +1,115 @@
+**********************************************************************************************************************************************************
+**********************************************************************************************************************************************************
+
+***CODE FOR OUTPUT FOR FARR AKI WORK
+
+**********************************************************************************************************************************************************
+**********************************************************************************************************************************************************
+
+***FOR THE WHOLE DATASET
+
+*1.1 count the number of people with a blood test in the index year
+bysort studyid yr12 (dos): gen yr12_n = _n if yr12==1
+count if yr12_n ==1
+
+*1.2 count by sex
+tab sex if yr12_n ==1
+
+*1.3 count by age in broad and narrow agegroups
+egen agebroad = cut(age), at(0,40,70,200) label
+egen agenarrow = cut(age), at(0,30,50,60,70,80,200) label
+tab agebroad if yr12_n ==1
+tab agenarrow if yr12_n ==1
+
+1.4 count by GFR in 4 categories
+egen GFR4cat = cut(mdrd), at(0,30,45,60,500) label
+tab GFR4cat if yr12_n ==1
+
+1.5 calculate mean age of (a) individuals with blood tests and (b) for AKI individuals
+tabstat age if yr12_n ==1, stat(mean sd)
+tabstat age if firstAKI ==1, stat(mean sd)
+
+**********************************************************************************************************************************************************
+**********************************************************************************************************************************************************
+
+***FOR AKI IN THE DATASET
+
+*2.1 count of AKI tests in 2012
+count if newAKI==1 & yr12==1
+
+*2.2 count of AKI tests by criterion type in 2012
+count if newAKI==1 & yr12==1
+count if AKIday==1 & yr12==1
+count if AKIweek==1 & yr12==1
+count if AKImonth==1 & yr12==1
+count if AKIyear==1 & yr12==1
+
+*2.3 count of narrow definition AKI tests
+count if (AKIday==1 | AKIweek==1) & yr12==1
+
+*2.1 count of AKI episodes in 2012
+count if AKIspellcounter==1 & yr12==1
+
+*2.2 count of AKI people in 2012
+count if firstAKI==1 & yr12==1
+
+*2.3 count of AKI people by sex
+tab sex if firstAKI==1
+
+*2.4 count of AKI people in agegroups
+tab agebroad if firstAKI==1
+tab agenarrow if firstAKI==1
+
+*2.5 count of AKI in baseline groups (I've separated 60 & 90 because low baseline have a role in variation, but could potentially be combined)
+tab refGFRgroup if firstAKI==1
+
+*2.5 count of diagnosis AKI severity stage of first AKI episode in 2012
+tab AKINdx if firstAKI==1
+
+*2.6 count of peakAKI severity stage of first AKI episode in 2012
+tab AKIN if firstAKI==1
+
+*2.7 count AKI severity progression of first AKI episode in 2012
+count if AKIN>AKINdx & first AKI==1
+
+*2.8 table of peak AKI severity vs age of first AKI epsiode in 2012
+tab AKIN agebroad if firstAKI==1
+
+*2.9 table of peak AKI severity vs baseline of first AKI epsiode in 2012
+tab AKIN refGFRgroup if firstAKI==1
+
+*2.10 explore relationship between AKi severity and sex
+bysort sex: tab AKIN if firstAKI==1
+
+*2.11 count of prior AKI episodes in 3 years before first AKI episode in 2012
+gen priorAKI = prevAKIcount
+recode priorAKI 2/9 = 2
+tab priorAKI if firstAKI==1
+
+*2.12 count of AKI people and their recovery status of their first AKI episode in 2012
+gen recovery = 0 if recoveryratio>=1.2 & firstAKI==1 & recoveryratio!=.
+replace recovery= 1 if recoveryratio<1.2 & firstAKI==1
+recode recovery .=2 if firstAKI==1
+label define recovery 1 "recovery" 0 "non-recovery" 2 "untested"
+label values recovery recovery
+tab recovery if firstAKI==1
+
+***CODE FOR AGE OUTPUTS FOR STANDARDIZATION
+
+**********************************************************************************************************************************************************
+
+*3.1 count AKI events and affected individauls for men and women by age
+tab age sex if AKIspellcounter==1 & yr12==1 
+tab age sex if firstAKI==1 & yr12==1
+
+*3.2 determine testing intensity (number of blood tests) by age and gender in index year
+tab age sex if yr12==1 
+
+*3.3 determine number of tested individuals by age and gender in index year
+tab age sex if yr12_n==1 
+
+**********************************************************************************************************************************************************
+**********************************************************************************************************************************************************
+
+**********************************************************************************************************************************************************
+**********************************************************************************************************************************************************
