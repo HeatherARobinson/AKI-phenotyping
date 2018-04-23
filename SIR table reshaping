@@ -168,24 +168,24 @@ head(Overb)
 #How many patients had creatinine tests in the index year 
 #following data cleansing
 index<-subset(Overb,as.numeric(year(strptime(Overb$EntryDate, format="%Y-%m-%d")))==2012,)
-levels(as.factor(index$PatID))
+length(levels(as.factor(index$PatID)))
 length(index$stcreat)
 #How many females have a creatinine result for the index year
 indexf<-subset(index,index$Sex=="F")
-levels(as.factor(indexf$PatID))
+length(levels(as.factor(indexf$PatID)))
 #How many creatinine test records for the index year by age
 index70<-subset(index,index$Age>=70)
-levels(as.factor(index70$PatID))
+length(levels(as.factor(index70$PatID)))
 index39<-subset(index,index$Age<=39)
-levels(as.factor(index39$PatID))
+length(levels(as.factor(index39$PatID)))
 
 #Cut the table down to patients with a creatinine test in the index year
 Over4<-Overb[Overb$PatID %in% index$PatID,]
 length(Over4$stcreat)
 length(index$stcreat)
-#There should be more records in Over4 than in index
+#There should always be more records in Over4 than in index
 
-#Assign associated eGFR if missing
+#Assign associated eGFR if missing (using MDRD formula)
 Over4$stcreat<-as.numeric(Over4$stcreat)
 Over4$mdrd<-ifelse(Over4$mdrd=="0"|Over4$mdrd=="Inf",paste("NA"),paste(Over4$mdrd))
 Over4$mdrd<-ifelse(Over4$mdrd=="NA"&Over4$Sex=="M"&Over4$Ethnicity=="B",175*((Over4$stcreat/88.4)^-1.154)*((Over4$Age)^-0.203)*1.212,paste(Over4$mdrd))
@@ -207,7 +207,7 @@ attach(Over4)
 SIRinput_conf<-file(paste("SIR_Rinput_conf.csv"), open="w")
 cat("studyid","dos","stcreat","mdrd","location_code","age","sex","\n", sep=",",file="SIR_Rinput_conf.csv",append=TRUE)
 
-for (n in 1:1067489){ #Change loop number to number of records in dataset
+for (n in 1:length(Over4$PatID)){ #Change loop number to number of records in dataset
 cat((paste(Over4$PatID[n])),(paste(Over4$EntryDate[n])), (paste(Over4$stcreat[n])),(paste(Over4$mdrd[n])), (paste(Over4$Source[n])),(paste(Over4$Age[n])),(paste(Over4$Sex[n])), "\n", file="SIR_Rinput_conf.csv", sep=",", fill=FALSE, labels=NULL, append=TRUE)}
 
 
