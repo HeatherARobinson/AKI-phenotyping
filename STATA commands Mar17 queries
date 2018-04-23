@@ -1,0 +1,282 @@
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+***START
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+
+
+DO  NOT  DELETE  THIS  LINE
+
+THIS FILE PROVIDES CODE FOR ADDITIONAL ANALYSIS IN FARR AKI STUDY
+
+NOTE THAT IT IS SET UP AS FOR DATASET INDEX YEAR 12, YOU MAY NEED TO REPLACE WITH YEAR 7 OR 14 WHICH WOULD INVOLVE UPDATING SOME VARIABLES, INCLUDING THE POST2009 VARIABLE FOR THE LOOP - I CAN DO THIS FOR YOU IF YOU WISH
+
+IF YOU HAVE NO LOCATION DATA YOU WILL NOT NEED TO COMPLETE STEP 7
+
+DESCRIPTION OF PEOPLE WITH/WITHOUT RECURRENT AKI IS STEP 5 (BUT WE MAY NOT NECESSARILY INLCUDE THIS IN PAPER)
+
+THE DATA TO COMPLETE STANDARDISATION USING HEATHERS PREVIOUS METHOD COMPLETE IS STEP 8 (THEN FOLLOW PREVIOUS INSTRUCTIONS ON AGE-SEX STANDARDISATION OF RATE OF AKI WITHIN EACH GFR SUBGROUP)
+
+
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+***STEP  1  COUNTS FOR  (A)  TEST  IN  INDEX  YEAR  (B)  PRIOR  TEST  WITHIN  365D  (C)  7D  (D)  2D  (E)  >=3  TESTS  (F) COUNT OF HOSPITAL TESTS (assuming varible is called hospital_location)
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+
+bysort  studyid  yr12  (dos):  gen  yr12_n  =  _n  if  yr12==1
+bysort  studyid:  egen  numtest12 = max(yr12_n)
+
+bysort  studyid  (dos):  gen  valid365=1  if  (dos - dos[_n-1] <=365)  &  (dos - dos[_n-1] >0)
+bysort  studyid  (dos):  gen  valid7=1  if  (dos - dos[_n-1] <=7)  &  (dos - dos[_n-1] >0)
+bysort  studyid  (dos):  gen  valid2=1  if  (dos - dos[_n-1] <=2)  &  (dos - dos[_n-1] >0)
+
+gen  yr12_valid365 =   1  if  yr12==1  &  valid365==1
+gen  yr12_valid7 =   1  if  yr12==1  &  valid7==1
+gen  yr12_valid2 =   1  if  yr12==1  &  valid2==1
+bysort  studyid:  egen  yr12_atrisk365 =   max(yr12_valid365)
+bysort  studyid:  egen  yr12_atrisk7 =   max(yr12_valid7)
+bysort  studyid:  egen  yr12_atrisk2 =   max(yr12_valid2)
+count  if  yr12_n==1
+count  if  yr12_n==1  &  yr12_atrisk365==1
+count  if  yr12_n==1  &  yr12_atrisk7==1
+count  if  yr12_n==1  &  yr12_atrisk2==1
+count  if  yr12_n==1  &  numtest12>=3
+
+count if yr12==1
+count if yr12==1 & hospital_location==1
+
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+***STEP  2  DESCRIPTION  OF  PEOPLE  WITH  INDEX  TEST  AND  A  PRIOR  TEST  WITHIN  365D
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+
+
+
+egen  agegroup =   cut(age),  at(0,  40,  70,  200)  label
+egen  mdrdgroup= cut(mdrd),  at(0,  30,  45,  60,  90,  250)  label 
+
+tab  sex  if  yr12_n==1  &  yr12_atrisk365==1
+tab  agegroup  if  yr12_n==1  &  yr12_atrisk365==1
+summ  age  if  yr12_n==1  &  yr12_atrisk365==1,  det
+tab  mdrdgroup  if  yr12_n==1  &  yr12_atrisk365==1
+
+
+
+
+
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+***STEP  3 COUNT  OF  PEOPLE  WITH  KDIGO  AKI  OR  AT  LEAST  ONE  TEST  IN  EACH  CRITERION
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+gen  K12AKI=1  if  (AKIday==1  | AKIweek==1)  &  yr12==1
+bysort  studyid:  egen  KDIGO_yr12=  max(K12AKI)
+count  if  KDIGO_yr12==1  &  yr12_n==1
+
+gen  K12AKIday=1  if  AKIday==1  &  yr12==1
+bysort  studyid:  egen  KDIGO_yr12day=  max(K12AKIday)
+count  if  KDIGO_yr12day==1  &  yr12_n==1
+
+gen  K12AKIweek=1  if  AKIweek==1  &  yr12==1
+bysort  studyid:  egen  KDIGO_yr12week=  max(K12AKIweek)
+count  if  KDIGO_yr12week==1  &  yr12_n==1
+
+
+gen  K12AKImonth=1  if  AKImonth==1  &  yr12==1
+bysort  studyid:  egen  KDIGO_yr12month=  max(K12AKImonth)
+count  if  KDIGO_yr12month==1  &  yr12_n==1
+
+
+gen  K12AKIyear=1  if  AKIyear==1  &  yr12==1
+bysort  studyid:  egen  KDIGO_yr12year=  max(K12AKIyear)
+count  if  KDIGO_yr12year==1  &  yr12_n==1
+
+
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+***STEP  4 COUNT  OF  NUMBER  OF  TESTS  PER  AKI  EPISODE  IN  THOSE  WTIH  AKI  (AND  S.D.)
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+
+
+bysort  studyid  AKIcounter:  egen  AKItestcounter =  max(AKIspellcounter) if  AKIcounter!=.
+summ  AKItestcounter  if  yr12==1  &  AKIspellcounter==1,  det
+
+
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+***STEP  5  COMPARE  THOSE  WITH 1YR PRIOR  AND  NONPRIOR  EPISODES  (Should  we  choose  to  visit  this)
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+***I  have  put  silent  code  for  generating  AKI  in  prior  year  here first   in case  you  need  to  rerun  it.
+*gen dos365 =dos + 365
+*gen pre1yr=1 if newAKI==1 & dos<AKIdos & dos365>=AKIdos
+*bysort studyid: egen priorAKI1yr = max(pre1yr)
+
+summ  age  if  firstAKI==1  &  priorAKI1yr==1,  det
+summ  age  if  firstAKI==1  &  priorAKI1yr!=1,  det
+
+tab  sex  if  firstAKI==1  &  priorAKI1yr==1
+tab  sex  if  firstAKI==1  &  priorAKI1yr!=1
+
+tab  refGFRgroup  if  firstAKI==1  &  priorAKI1yr==1
+tab  refGFRgroup  if  firstAKI==1  &  priorAKI1yr!=1
+
+
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+***STEP  6 DESCRIBE  THOSE  WITH  AKI  IN  GFR  GROUPS
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+
+
+***Note  previous  discussion  about  mdrdgroup  or  AKIrefGFRgroup???
+tab  refGFRgroup  if  firstAKI==1
+
+
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+***STEP  7 RECALCULATE  AKI  USING  ONLY  HOSPITAL  TESTS
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+
+
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+
+FOR THIS SECTION YOU NEED TO LOAD UP YOUR RAW EXTRACT DROP THE NON-HOSPITAL TESTS AND ONLY ***THEN*** DROP DUPLICATES ETC.
+
+
+keep  studyid sex dos  age mdrd stcreat hospital_location
+keep  if  hospital_location==1
+
+
+ren stcreat oldstcreat
+gsort studyid dos -oldstcreat
+by studyid dos: gen n=_n
+gen newstcreat=oldstcreat if n==1
+ren newstcreat stcreat
+drop if stcreat==.
+
+
+
+gen yr12=1 if dos>=40907 & dos<=41272
+label var yr12 "sample from 2012"
+gen post2009=1 if dos>=39812
+label var post2009 "sample after 1st jan 2009"
+
+***remember  to  set  this  number  to  >3  years  before  january  of  index  year - this needs to be changed if you are owrking with an earlier index year
+
+
+bysort studyid post2009 (dos): gen protagonist=_n if post2009==1
+tabstat protagonist, stat (n, mean, median, min, max)
+
+*REMEMBER  TO  FILL  IN  LOOP  MAX  VALUE  OF  x  WITH  MAX  VALUE  OF  PROTAGONIST
+
+gen newAKI=0
+gen AKImonth=0
+gen AKIyear=0
+gen AKIweek=0
+gen AKIday=0
+
+
+***LOOP for all values (all the variable names are a bit silly, please forgive me for this!)
+
+forvalues x=1/270 {
+display `x'
+*indicates progress through the loop
+
+bysort studyid (dos): gen mightydate=dos if protagonist==`x'
+bysort studyid (dos): egen protagonistdos=max(mightydate)
+
+bysort studyid (dos): gen yearmarker=1 if ((protagonistdos-dos)<=365 & (protagonistdos-dos)>90)
+bysort studyid (dos): gen weekmarker=1 if ((protagonistdos-dos)<=7 & (protagonistdos-dos)>=0)
+bysort studyid (dos): gen monthmarker=1 if ((protagonistdos-dos)<=90 & (protagonistdos-dos)>7)
+bysort studyid (dos): gen daymarker=1 if ((protagonistdos-dos)<=2 & (protagonistdos-dos)>=0)
+
+*marks the dates of blood tests that fit the ealert AKI windows or those for sensitivity analysis
+
+bysort studyid (dos): gen yearvalue=stcreat if (yearmarker==1)
+bysort studyid (dos): gen weekvalue=stcreat if (weekmarker==1)
+bysort studyid (dos): gen monthvalue=stcreat if (monthmarker==1)
+bysort studyid (dos): gen dayvalue=stcreat if (daymarker==1)
+
+***finds the appropriate creatinine within these windows, excludes missing creatinines (using newblood variable) which would all be exceptionally high
+
+bysort studyid (dos): egen yearmedian= median(yearvalue)
+bysort studyid (dos): egen weekmin= min(weekvalue)
+bysort studyid (dos): egen monthmedian= median(monthvalue)
+bysort studyid (dos): egen daymin= min(dayvalue)
+
+
+
+***applies the optimal reference creatinine across all patient samples
+
+bysort studyid (dos): gen mightyvalue= stcreat if protagonist==`x'
+bysort studyid (dos): egen protagonistvalue= max(mightyvalue)
+***finds the index (investigated) creatinine of key interest, applies this value across all patient samples
+
+replace AKIyear=1 if (protagonistvalue/yearmedian)>=1.5 & protagonist==`x' & !missing(yearmedian) & missing(monthmedian)
+*year AKI can ONLY be tested if there is not a monthmedian already available for the sample, thus monthmedian sample needs to be missing before looking back further
+replace AKIweek=1 if (protagonistvalue/weekmin)>=1.5 & protagonist==`x' & !missing(weekmin)
+replace AKIday=1 if (protagonistvalue-daymin)>26 & protagonist==`x' & !missing(daymin)
+replace AKImonth=1 if (protagonistvalue/monthmedian)>=1.5 & protagonist==`x' & !missing(monthmedian)
+
+*** flags samples meeting AKI criteria, (!missing option is vital)
+drop mightydate protagonistdos yearmarker weekmarker daymarker monthmarker yearvalue weekvalue monthvalue dayvalue yearmedian weekmin monthmedian daymin mightyvalue protagonistvalue
+}
+
+*END OF LOOP, HAVE NOW FLAGGED ALL TESTS MEETING EACH TYPE OF AKI CONDITION
+
+***DEVELOP COMBINED GROUPS AND MARK FIRST AKI
+replace newAKI=1 if (AKIyear==1 |  AKIweek==1 | AKIday==1 | AKImonth==1)
+bysort  studyid  yr12  (dos):  gen  yr12_n  =  _n  if  yr12==1
+gen  hospAKI12=1  if  newAKI==1  &  yr12==1
+bysort  studyid:  egen  hospitalAKI12 =   max(hospAKI12)
+count  if  hospitalAKI12==1  &  yr12_n==1
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+
+  
+
+
+
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+***STEP  8  FOR  STANDARDISATION  (SHOULD  WE  CHOOSE)  -- GO BACK TO YOUR MAIN FILE FOR THIS, NOT THE HOSPITAL ONLY LOOP
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+
+
+
+
+*NON-AKI  bit  for  standardisation  if  we  need  it  /  choose  to  perform
+
+
+tab age if yr12_n==1 & yr12_atrisk365==1 & sex=="M" & mdrdgroup==0
+tab  age  if  yr12_n==1  &  yr12_atrisk365==1  &  sex=="F"  &  mdrdgroup==0
+tab  age  if  yr12_n==1  &  yr12_atrisk365==1  &  sex=="M"  &  mdrdgroup==1
+tab  age  if  yr12_n==1  &  yr12_atrisk365==1  &  sex=="F"  &  mdrdgroup==1
+tab  age  if  yr12_n==1  &  yr12_atrisk365==1  &  sex=="M"  &  mdrdgroup==2
+tab  age  if  yr12_n==1  &  yr12_atrisk365==1  &  sex=="F"  &  mdrdgroup==2
+tab  age  if  yr12_n==1  &  yr12_atrisk365==1  &  sex=="M"  &  mdrdgroup==3
+tab  age  if  yr12_n==1  &  yr12_atrisk365==1  &  sex=="F"  &  mdrdgroup==3
+tab  age  if  yr12_n==1  &  yr12_atrisk365==1  &  sex=="M"  &  mdrdgroup==4
+tab  age  if  yr12_n==1  &  yr12_atrisk365==1  &  sex=="F"  &  mdrdgroup==4
+
+*AKI  bit  for  standardisation  if  we  need  it  /  choose  to  perform
+
+tab  age  if  firstAKI==1  &  sex=="M"  &  refGFRgroup==0
+tab  age  if  firstAKI==1  &  sex=="F"  &  refGFRgroup==0
+tab  age  if  firstAKI==1  &  sex=="M"  &  refGFRgroup==1
+tab  age  if  firstAKI==1  &  sex=="F"  &  refGFRgroup==1
+tab  age  if  firstAKI==1  &  sex=="M"  &  refGFRgroup==2
+tab  age  if  firstAKI==1  &  sex=="F"  &  refGFRgroup==2
+tab  age  if  firstAKI==1  &  sex=="M"  &  refGFRgroup==3
+tab  age  if  firstAKI==1  &  sex=="M"  &  refGFRgroup==3
+tab  age  if  firstAKI==1  &  sex=="F"  &  refGFRgroup==4
+tab  age  if  firstAKI==1  &  sex=="M"  &  refGFRgroup==4
+
+
+
+
+
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+***STEP  9  MORAY SUB-STUDY - APPLIES TO GRAMPIAN ONLY
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+
+
+
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
+***END
+*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*8*
