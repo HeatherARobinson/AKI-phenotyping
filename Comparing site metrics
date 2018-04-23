@@ -77,7 +77,7 @@ summary(tiaov)
 
 
 #COMPARING INCIDENCE, PRIOR AKI AND RECOVERY PROPORTIONS PER SITE
-setwd("c:/Users/MQBPJHR4/Documents")
+
 rec<-read.table("rectest.csv",sep=',',header=TRUE)
 akt<-read.table("akitest.csv",sep=',',header=TRUE)
 
@@ -102,7 +102,6 @@ case.m/total.m
 
 #Was there different amounts of missing data for followup by site?
 
-setwd("c:/Users/MQBPJHR4/Documents")
 mis<-read.table("misstest.csv",sep=',',header=TRUE)
 case.vector=tapply(mis$miss,mis$site,sum)
 total.vector = tapply(mis$nomiss+mis$miss, mis$site, sum)
@@ -112,7 +111,6 @@ prop.test(case.vector, total.vector)
 
 #Did the proportions of AKIs of severity 2-3 vary significantly across sites?
 
-setwd("c:/Users/MQBPJHR4/Documents")
 s<-read.table("severity test.csv",sep=',',header=TRUE)
 case.vectors=tapply(s$one,s$site,sum)
 total.vectors = tapply(s$twothr+s$one, s$site, sum)
