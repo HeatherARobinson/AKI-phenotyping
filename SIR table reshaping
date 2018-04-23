@@ -1,10 +1,27 @@
 Prior preprocesing: In excel, removed # symbols, removed start tabs from indented rows and edited rows with value in units column in order to load into R.
+library(lubridate)
+library(plyr)
 
-setwd("c:/Users/mqbpjhr4/Documents")
+#Join tables previously split for formatting
+Patients<-read.table("Patients.csv",header=TRUE, sep=",")
+testsA<-read.table("1tests.csv",header=TRUE,sep= ",")
+testsB<-read.table("2tests.csv",header=TRUE,sep= ",",quote="")
+testsC<-read.table("3tests.csv",header=TRUE,sep= ",") 
+testsD<-read.table("4tests.csv",header=TRUE,sep= ",")
+testsE<-read.table("5tests.csv",header=TRUE,sep= ",")
+testsF<-read.table("6tests.csv",header=TRUE,sep= ",")
+testsG<-read.table("7tests.csv",header=TRUE,sep= ",")
+testsH<-read.table("8tests.csv",header=TRUE,sep= ",")
+tests<- rbind(testsA,testsB,testsC,testsD,testsE,testsF,testsG,testsH)
+write.csv(tests,file="tests.csv")
+#In our analysis it was only possible to load data in multiple files:
+#rbind, then save a copy for future analysis
+#################################################################################################
+
 Patients<-read.table("Patients.csv",header=TRUE, sep=",")
 tests<-read.table("tests.csv",header=TRUE,sep= ",")
 SIR<- merge(Patients,tests,all=TRUE, by='PatID')
-require(lubridate) 
+
 SIR$Age<-(as.numeric(year(strptime(SIR$EntryDate, format="%d/%m/%Y"))))-SIR$Year_Of_Birth
 attach(SIR)
 Over<-subset(SIR,SIR$Age>15 & as.numeric(year(strptime(SIR$EntryDate, format="%d/%m/%Y")))>=2009,)
