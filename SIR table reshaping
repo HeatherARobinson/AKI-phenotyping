@@ -159,48 +159,55 @@ Over2$PatID<-as.numeric(Over2$PatID)
 Over2<-Over2[order(Over2$PatID,rev(Over2$EntryDate)),]
 d<-duplicated(Over2[,c("PatID","EntryPeriod","stcreat")])
 Over2<-Over2[!d,]
+Over2<-Over2[,c("PatID","Sex","Ethnicity","Source","EntryDate","Age","stcreat","mdrd")]
+
+#Reshape table so mdrd and stcreat are on the same line to avoid STATA issues
+Overb<-aggregate(x=Over2[c("stcreat","mdrd")], by=list(PatID=Over2$PatID,EntryDate=Over2$EntryDate,Age=Over2$Age,Sex=Over2$Sex,Ethnicity=Over2$Ethnicity,Source=Over2$Source), min, na.rm = TRUE)
+head(Overb)
+
+#How many patients had creatinine tests in the index year 
+#following data cleansing
+index<-subset(Overb,as.numeric(year(strptime(Overb$EntryDate, format="%Y-%m-%d")))==2012,)
+levels(as.factor(index$PatID))
+length(index$stcreat)
+#How many females have a creatinine result for the index year
+indexf<-subset(index,index$Sex=="F")
+levels(as.factor(indexf$PatID))
+#How many creatinine test records for the index year by age
+index70<-subset(index,index$Age>=70)
+levels(as.factor(index70$PatID))
+index39<-subset(index,index$Age<=39)
+levels(as.factor(index39$PatID))
+
+#Cut the table down to patients with a creatinine test in the index year
+Over4<-Overb[Overb$PatID %in% index$PatID,]
+length(Over4$stcreat)
+length(index$stcreat)
+#There should be more records in Over4 than in index
+
+#Assign associated eGFR if missing
+Over4$stcreat<-as.numeric(Over4$stcreat)
+Over4$mdrd<-ifelse(Over4$mdrd=="0"|Over4$mdrd=="Inf",paste("NA"),paste(Over4$mdrd))
+Over4$mdrd<-ifelse(Over4$mdrd=="NA"&Over4$Sex=="M"&Over4$Ethnicity=="B",175*((Over4$stcreat/88.4)^-1.154)*((Over4$Age)^-0.203)*1.212,paste(Over4$mdrd))
+Over4$mdrd<-ifelse(Over4$mdrd=="NA"&Over4$Sex=="F"&Over4$Ethnicity=="A",(175*((Over4$stcreat/88.4)^-1.154)*((Over4$Age)^-0.203)*0.742),paste(Over4$mdrd))
+Over4$mdrd<-ifelse(Over4$mdrd=="NA"&Over4$Sex=="F"&Over4$Ethnicity=="B",(175*((Over4$stcreat/88.4)^-1.154)*((Over4$Age)^-0.203)*0.742*1.212),paste(Over4$mdrd))
+Over4$mdrd<-ifelse(Over4$mdrd=="NA",(175*(Over4$stcreat/88.4)^-1.154)*((Over4$Age)^-0.203),paste(Over4$mdrd))
+
+#Drop eGFR values over 250 uml/L
+Over4<-Over4[Over4$mdrd<=250,]
+length(Over4$PatID)
+# Over4 is a subset from patients before transplant or dialysis
+#for patients over 15 
+#with records within the index year, records from 01/01/2009 to 07/12/2014 #excluding null creatinine values 
+#excluding mdrd>250.
+
+#Write an input file for STATA with headings needed for Aberdeen algorithm
+attach(Over4)
+
+SIRinput_conf<-file(paste("SIR_Rinput_conf.csv"), open="w")
+cat("studyid","dos","stcreat","mdrd","location_code","age","sex","\n", sep=",",file="SIR_Rinput_conf.csv",append=TRUE)
+
+for (n in 1:1067489){ #Change loop number to number of records in dataset
+cat((paste(Over4$PatID[n])),(paste(Over4$EntryDate[n])), (paste(Over4$stcreat[n])),(paste(Over4$mdrd[n])), (paste(Over4$Source[n])),(paste(Over4$Age[n])),(paste(Over4$Sex[n])), "\n", file="SIR_Rinput_conf.csv", sep=",", fill=FALSE, labels=NULL, append=TRUE)}
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#This gives you a subset of records for patients before CKD, transplant or dialysis
-
-
-#Check for and delete delayed duplicates
-class(EntryDate)
-Over$EntryDate<-as.Date(Over$EntryDate, format="%d/%m/%Y")
-MONTH<- format(Over$EntryDate, "%m")
-YEAR<- format(Over$EntryDate, "%Y")
-Over$EntryPeriod<-paste(MONTH,YEAR)
-
-library(lubridate)
-d<-Over[!(duplicated(Over$Value)&duplicated(Over$PatID)&duplicated(Over$EntryPeriod)),]
-d2<-subset(d,d$ReadCode=="creatinine",)
-
-#Write an input file for STATA with headings complementary to Aberdeen algorithm 
-SIRinput<-file(paste("SIR_Rinput.csv"), open="w")
-cat("studyid","dos","stcreat","mdrd","location_code","age","sex","\n", sep=",",file="SIR_Rinput.csv",append=TRUE)
-for (n in 1:205667){ #Change loop number to number of records in dataset
-cat((paste(d2$PatID[n])),(paste(d2$EntryDate[n])), (paste(d2$stcreat[n])),(paste(d2$mdrd[n])), (paste(d2$Source[n])),(paste(d2$Age[n])), (paste(d2$Sex[n])), "\n", file="SIR_Rinput.csv", sep=",", fill=FALSE, labels=NULL, append=TRUE)}
