@@ -1,6 +1,7 @@
 Prior preprocesing: In excel, removed # symbols, removed start tabs from indented rows and edited rows with value in units column in order to load into R.
 library(lubridate)
 library(plyr)
+library(dplyr)
 
 #Join tables previously split for formatting
 Patients<-read.table("Patients.csv",header=TRUE, sep=",")
@@ -44,15 +45,53 @@ table(Over$ReadCode)
 #Check these manually every time you re-extract/resubset as they will change
 attach(Over)
 
+#Assign more options
+options(expressions=20000)
+quant<-Over[Over$ReadCode=="creatinine" &as.numeric(Over$Value)>0 & as.numeric(year(strptime(Over$EntryDate, format="%Y-%m-%d")))==2012,]
+table(quant$ReadCode)
+#Gives the number of creatinine values for the index year prior to data cleansing
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #Drop all records entered after commencement of dialysis/transplant
 Over$endpoint<-with(Over, ifelse(ReadCode=="dialysisorckd",paste(EntryDate), "NA"))
-Over$endpoint<-with(Over, ifelse(ReadCode=="transplant",paste(EntryDate), paste(endpoint)))
+Over$endpoint<-with(Over, ifelse(ReadCode=="transplant",paste(EntryDate), paste(Over$endpoint)))
 
-Over$date_diff <- ifelse(!is.na(Over$endpoint), 
-(as.Date
-(as.character(Over$endpoint), format="%Y/%m/%d")-as.Date(as.character(Over$EntryDate), format="%d/%m/%Y")
-), print("NA"))
-Over<-Over[is.na(Over$date_diff), ]
+#APPLY ENDPOINT ACROSS ALL PATIENTS
+Over$endpoint<-as.Date(Over$endpoint, format="%d/%m/%Y")
+O<-Over[!is.na(Over$endpoint),c("PatID","endpoint")]
+O2<-O%>%
+group_by(PatID) %>%
+slice(which.min(endpoint)) %>%
+as.data.frame
+
+Over<-Over[,c(1:19,21)] #remove original endpoint column
+Over<-merge(Over,O2,all.x=TRUE) #merge on new variable
+Over$EntryDate<-as.Date(as.character(Over$EntryDate), format="%d/%m/%Y")
+Over$date_diff <- ifelse(!is.na(Over$endpoint),
+difftime(strptime(Over$endpoint,format="%Y-%m-%d"),strptime(Over$EntryDate, format="%Y-%m-%d"),units="days"), paste("NA"))
+
+Over<-Over[is.na(Over$date_diff)|Over$date_diff>=0, ]
 #date_diff is never more than 0 in this dataset
 
 #This gives you a subset of records for patients before CKD, transplant or dialysis
@@ -93,12 +132,8 @@ Over$EntryPeriod<-paste(MONTH,YEAR)
 library(lubridate)
 d<-Over[!(duplicated(Over$Value)&duplicated(Over$PatID)&duplicated(Over$EntryPeriod)),]
 d2<-subset(d,d$ReadCode=="creatinine",)
-e<-Over[!(duplicated(Over$Value)&duplicated(Over$PatID)),]
-e2<-subset(e,d$ReadCode=="creatinine",)
 
-df<-subset(d,d$Sex=="F"&d$ReadCode=="creatinine",)
-
-#Write an input file for STATA with headings complementary Aberdeen algorithm 
+#Write an input file for STATA with headings complementary to Aberdeen algorithm 
 SIRinput<-file(paste("SIR_Rinput.csv"), open="w")
 cat("studyid","dos","stcreat","mdrd","location_code","age","sex","\n", sep=",",file="SIR_Rinput.csv",append=TRUE)
 for (n in 1:205667){ #Change loop number to number of records in dataset
