@@ -88,7 +88,7 @@ gsub(" ", "", Over$EntryPeriod, fixed = TRUE)
 Over$EntryPeriod<-as.numeric(as.factor(Over$EntryPeriod))
 
 #Generate vector for whether test after commencement of dialysis/transplant
-Over$endpoint<-with(Over, ifelse(Over$ReadCode=="dialysisorckd",paste(Over$EntryDate), "NA")) 
+Over$endpoint<-with(Over, ifelse(Over$ReadCode=="dialysis",paste(Over$EntryDate), "NA")) 
 Over$endpoint<-with(Over, ifelse(Over$ReadCode=="transplant",paste(EntryDate), paste(Over$endpoint)) )
 levels(as.factor(Over$endpoint))
 Over$EntryDate<-as.Date(Over$EntryDate, format="%d/%m/%Y")
