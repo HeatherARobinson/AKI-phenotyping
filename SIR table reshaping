@@ -35,11 +35,11 @@ attach(Over)
 
 #Group related read codes
 levels(Over$ReadCode)
-levels(Over$ReadCode)[1:23] <- "dialysisorckd"
-levels(Over$ReadCode)[3:7] <- "eGFR"
-levels(Over$ReadCode)[4:5] <- "transplant"
-levels(Over$ReadCode)[2] <- "creatinine"
-levels(Over$ReadCode)[5:12] <- "dialysisorckd"
+levels(Over$ReadCode)[c(1:23,36:43,51:54,57,61,62)] <- "dialysisorckd"
+levels(Over$ReadCode)[c(2:6,14,15,19,21)] <- "creatinine"
+levels(Over$ReadCode)[3:6] <- "eGFR"
+levels(Over$ReadCode)[4:14] <- "transplant"
+
 table(Over$ReadCode)
 #Check these manually every time you re-extract/resubset as they will change
 attach(Over)
