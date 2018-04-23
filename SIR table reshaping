@@ -22,6 +22,7 @@ write.csv(tests,file="tests.csv")
 Patients<-read.table("Patients.csv",header=TRUE, sep=",")
 tests<-read.table("tests.csv",header=TRUE,sep= ",")
 SIR<- merge(Patients,tests,all=TRUE, by='PatID')
+SIR<-SIR[!SIR$ReadCode %in% levels(SIR$ReadCode)[c(2:23)],] #Remove CKD codes originally used for the extraction but not needed here
 levels(as.factor(SIR$PatID))
 #78630
 
@@ -36,7 +37,7 @@ attach(Over)
 
 #Group related read codes
 levels(Over$ReadCode)
-levels(Over$ReadCode)[c(1:23,36:43,51:54,57,61,62)] <- "dialysisorckd"
+levels(Over$ReadCode)[c(1:23,36:43,51:54,57,61,62)] <- "dialysis"
 levels(Over$ReadCode)[c(2:6,14,15,19,21)] <- "creatinine"
 levels(Over$ReadCode)[3:6] <- "eGFR"
 levels(Over$ReadCode)[4:14] <- "transplant"
@@ -59,11 +60,39 @@ levels(Over$Units)[c(6,17:19,28,33)]<-"umol/L"
 table(Over$Units,Over$ReadCode)
 levels(Over$Units)[c(1,5,7,13:16,27)]<- "mLmin173m2"
 
+Over$Value<-as.numeric(Over$Value)
 Over$stcreat<- ifelse(Over$Units=="umol/L"| Over$Units=="None",Over$Value,(Over$Value/1000)) 
+Over$stcreat<- ifelse(Over$Units=="pmoloL", as.numeric(Over$Value)/1000000, paste(Over$stcreat)) 
 Over$stcreat<- ifelse(Over$ReadCode=="creatinine",paste(Over$stcreat), paste("NA")) 
+Over$stcreat<-as.numeric(Over$stcreat)
 
-Over$mdrd<- ifelse(Over$Units=="mLmin173m2"| Over$Units=="None",paste(Over$Value),paste(Over$value/1440)) 
+Over$mdrd<- ifelse(Over$Units=="mLo24ho1.73m*2",paste(as.numeric(Over$Value)/1440),paste("NA"))
+Over$mdrd<- ifelse(Over$Units=="mLmin173m2",paste(Over$Value),paste(Over$mdrd)) 
 Over$mdrd<- ifelse(Over$ReadCode=="eGFR",paste(Over$mdrd), paste("NA"))
+Over$mdrd<-as.numeric(Over$mdrd)
+
+#Simplify ethnicity for eGFR calculation (B being black ethnicities, A being other ethnicities)
+levels(Over$Ethnicity)[97:142]<-"A"
+levels(Over$Ethnicity)[3:10]<-"A"
+levels(Over$Ethnicity)[22:27]<-"A"
+levels(Over$Ethnicity)[24:67]<-"A"
+levels(Over$Ethnicity)[26:36]<-"A"
+levels(Over$Ethnicity)[1:2]<-"B"
+levels(Over$Ethnicity)[3:27]<-"B"
+table(Over$Ethnicity)
+
+MONTH<- format(Over$EntryDate, "%m")
+YEAR<- format(Over$EntryDate, "%Y")
+Over$EntryPeriod<-paste(MONTH,YEAR)
+gsub(" ", "", Over$EntryPeriod, fixed = TRUE)
+Over$EntryPeriod<-as.numeric(as.factor(Over$EntryPeriod))
+
+#Generate vector for whether test after commencement of dialysis/transplant
+Over$endpoint<-with(Over, ifelse(Over$ReadCode=="dialysisorckd",paste(Over$EntryDate), "NA")) 
+Over$endpoint<-with(Over, ifelse(Over$ReadCode=="transplant",paste(EntryDate), paste(Over$endpoint)) )
+levels(as.factor(Over$endpoint))
+Over$EntryDate<-as.Date(Over$EntryDate, format="%d/%m/%Y")
+Over$endpoint<-as.Date(Over$endpoint, format="%Y-%m-%d")
 
 
 
@@ -73,40 +102,6 @@ Over$mdrd<- ifelse(Over$ReadCode=="eGFR",paste(Over$mdrd), paste("NA"))
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#Drop all records entered after commencement of dialysis/transplant
-Over$endpoint<-with(Over, ifelse(ReadCode=="dialysisorckd",paste(EntryDate), "NA"))
-Over$endpoint<-with(Over, ifelse(ReadCode=="transplant",paste(EntryDate), paste(Over$endpoint)))
-
-#APPLY ENDPOINT ACROSS ALL PATIENTS
-Over$endpoint<-as.Date(Over$endpoint, format="%d/%m/%Y")
-O<-Over[!is.na(Over$endpoint),c("PatID","endpoint")]
-O2<-O%>%
-group_by(PatID) %>%
-slice(which.min(endpoint)) %>%
-as.data.frame
-
-Over<-Over[,c(1:19,21)] #remove original endpoint column
-Over<-merge(Over,O2,all.x=TRUE) #merge on new variable
-Over$EntryDate<-as.Date(as.character(Over$EntryDate), format="%d/%m/%Y")
-Over$date_diff <- ifelse(!is.na(Over$endpoint),
-difftime(strptime(Over$endpoint,format="%Y-%m-%d"),strptime(Over$EntryDate, format="%Y-%m-%d"),units="days"), paste("NA"))
-
-Over<-Over[is.na(Over$date_diff)|Over$date_diff>=0, ]
-#date_diff is never more than 0 in this dataset
 
 #This gives you a subset of records for patients before CKD, transplant or dialysis
 
