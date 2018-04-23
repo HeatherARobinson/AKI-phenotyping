@@ -1,0 +1,163 @@
+library(fmsb)
+
+ratedifference(140.8, 147, 10000, 10000, CRC=FALSE, conf.level=0.95) 
+ratedifference(140, 124, 10000, 10000, CRC=FALSE, conf.level=0.95) 
+ratedifference(96, 124, 10000, 10000, CRC=FALSE, conf.level=0.95) 
+ratedifference(161, 124, 10000, 10000, CRC=FALSE, conf.level=0.95) 
+p<-read.table("agegendercomparison.csv",header=T,sep=",")
+summary(m1 <- glm(Mpttenthou ~ Site + Age, family="poisson", data=p))
+
+#Test gender split by site
+grampian=c(236866,245578)
+# 49.10% males considering 2012 data
+salford=c(96469,97414)
+#49.96% males
+swansea=c(236866,255369)
+#48.35% males
+hampshire=c(200580,414818)
+#48.71% males
+gender.survey = as.data.frame(rbind(grampian, salford, swansea, hampshire))
+names(gender.survey) = c('male', 'female')
+chisq.test(gender.survey)
+
+#Test datasets for any difference in age
+
+grampian = c(6356.00,6341.00,6633.00,7023.00,7766.00,8595.00,8779.00,8276.00,8281.00,8265.00,8263.00,8265.00,8232.00,7836.00,8011.00,7986.00,7875.00,7781.00,7388.00,7010.00,6977.00,7309.00,7113.00,7389.00,7849.00,8031.00,8478.00,8076.00,8503.00,8310.00,8609.00,8472.00,8842.00,8634.00,8806.00,8471.00,8125.00,7929.00,7882.00,7905.00,7663.00,7651.00,7314.00,7307.00,6976.00,6800.00,6849.00,6831.00,7155.00,7198.00,7836.00,5846.00,5186.00,5202.00,5135.00,4871.00,4328.00,4554.00,4304.00,4196.00,3952.00,3815.00,3678.00,3443.00,3216.00,3135.00,2841.00,2579.00,2406.00,2143.00,1938.00,1679.00,1573.00,1335.00,1020.00,3817.00)
+salford = c(2775.00,2781.00,2794.00,2824.00,3378.00,3649.00,3897.00,3974.00,4100.00,4114.00,4245.00,4364.00,4400.00,4255.00,4237.00,4016.00,3941.00,3754.00,3628.00,3159.00,2817.00,3054.00,3007.00,2915.00,3061.00,3232.00,3260.00,3104.00,3333.00,3270.00,3190.00,3265.00,3243.00,3245.00,3206.00,3149.00,2937.00,2801.00,2874.00,2694.00,2735.00,2380.00,2279.00,2295.00,2338.00,2203.00,2227.00,2374.00,2332.00,2460.00,2767.00,1969.00,1942.00,1898.00,1864.00,1728.00,1576.00,1593.00,1592.00,1564.00,1436.00,1454.00,1273.00,1218.00,1086.00,1104.00,1024.00,996.00,871.00,743.00,737.00,683.00,634.00,543.00,399.00,1623.00)
+swansea= c(6416.00,6563.00,6435.00,6746.00,7517.00,7646.00,7410.00,7384.00,6687.00,6356.00,5815.00,6075.00,6077.00,5391.00,5000.00,5112.00,5314.00,5520.00,5683.00,5979.00,6441.00,6718.00,6558.00,6911.00,6928.00,7114.00,7229.00,7568.00,7465.00,7250.00,7181.00,7186.00,7049.00,6897.00,6997.00,6667.00,6310.00,6061.00,6295.00,6230.00,6196.00,6163.00,6526.00,6603.00,7172.00,7376.00,5941.00,5833.00,5800.00,5589.00,5218.00,4878.00,4915.00,4880.00,4774.00,4682.00,4497.00,4385.00,4114.00,3966.00,3995.00,3764.00,3692.00,3393.00,3127.00,3064.00,2962.00,2620.00,2414.00,2296.00,2271.00,2047.00,1653.00,1321.00,891.00,3619.00)
+hampshire= c(0,0,0,9492,9104,9450,9649,9910,9703,9864,9797,10085,10018,9976,9902,9775,9972,10022,10292,10541,10133,9635,9340,9578,9705,10032,10399,10916,11565,11688,11531,11863,11970,12121,12433,12564,12407,12063,11729,11451,11073,10905,10485,10239,9490,9404,9452,9262,8965,9097,9297,9855,10869,9950,8239,8520,7512,7158,6079,6110,6228,5898,5712,5441,5065,4899,4406,4300,4068,3867,3453,2941,2538,2253,1921,7413)
+age.survey = as.data.frame(rbind(grampian, salford, swansea, hampshire))
+chisq.test(age.survey)
+
+
+#Are the crude AKI incidence rates different across datasets?
+
+#Using a 1 way ANOVA to start with
+df<-data.frame(crude=c(131,138,139,124,89,151),
+site=factor(rep(c("Grampian","Grampian","Grampian","Salford","Hampshire","ABMU"),1)))
+tapply(df$crude, df$site, mean)
+crudeaov<- aov(df$crude ~ df$site)
+summary(crudeaov)
+TukeyHSD(x=crudeaov, 'df$site', conf.level=0.95)
+
+#There are significant differences between sites, resulting from pairwise differences between Hampshire and ABMU/Grampian
+
+#Repeating with directly standardised values:
+
+df2<-data.frame(si=c(147,151,146,141,79,146),
+site=factor(rep(c("Grampian","Grampian","Grampian","Salford","Hampshire","ABMU"),1)))
+tapply(df2$si, df2$site, mean)
+siaov<- aov(df2$si ~ df2$site)
+summary(siaov)
+TukeyHSD(x=siaov, 'df2$site', conf.level=0.95)
+
+#Site is still significant, there are now significant pairwise differences between Hampshire and all other sites
+
+#Does testing intensity vary significantly between sites?
+
+df3<-data.frame(ti=c(86.55,102.3,112.66,96.50,89.47,104.97),
+site=factor(rep(c("Grampian","Grampian","Grampian","Salford","Hampshire","ABMU"),1)))
+tapply(df3$ti, df3$site, mean)
+tiaov<- aov(df3$ti ~ df3$site)
+summary(tiaov)
+TukeyHSD(x=tiaov, 'df3$site', conf.level=0.95)
+
+#Testing intensity does not vary significantly between sites.
+
+#If all values are adjusted for testing intensity (SI rate divided by blood tests per head),
+#does this change the significance?
+
+df3<-data.frame(tiA=c(169.75,147.61,129.55,146.11,88.27,139.05),
+site=factor(rep(c("Grampian","Grampian","Grampian","Salford","Hampshire","ABMU"),1)))
+tapply(df3$tia, df3$site, mean)
+tiaov<- aov(df3$tia ~ df3$site)
+summary(tiaov)
+
+#Site is no longer significant
+
+
+#COMPARING INCIDENCE, PRIOR AKI AND RECOVERY PROPORTIONS PER SITE
+setwd("c:/Users/MQBPJHR4/Documents")
+rec<-read.table("rectest.csv",sep=',',header=TRUE)
+akt<-read.table("akitest.csv",sep=',',header=TRUE)
+
+#Was there a significant difference in the proportion of each population suffering an AKI in the index year?
+
+case.p=tapply(akt$akis,akt$site,sum)
+total.p = tapply(akt$noakis+akt$akis, akt$site, sum)
+prop.test(case.p, total.p)
+
+#The proportion of individuals suffering AKIs across sites is significantly different
+#Hampshire has the lowest proportion (0.008) and Grampian the highest (0.013)
+case.p/total.p
+
+#Which proportion of people recovered from their first AKI of the index year?
+case.m=tapply(rec$recs,rec$site,sum)
+total.m = tapply(rec$norec+rec$recs, rec$site, sum)
+prop.test(case.m, total.m)
+
+#Different proportions of people recovered from their AKIs at each site. 
+case.m/total.m
+#Hampshire has the highest proportion of recovery (73.06% of patients), and Swansea the lowest (57.72% of patients)
+
+#Was there different amounts of missing data for followup by site?
+
+setwd("c:/Users/MQBPJHR4/Documents")
+mis<-read.table("misstest.csv",sep=',',header=TRUE)
+case.vector=tapply(mis$miss,mis$site,sum)
+total.vector = tapply(mis$nomiss+mis$miss, mis$site, sum)
+prop.test(case.vector, total.vector)
+
+#The amount of individuals lost to follow-up was similar across datasets.
+
+#Did the proportions of AKIs of severity 2-3 vary significantly across sites?
+
+setwd("c:/Users/MQBPJHR4/Documents")
+s<-read.table("severity test.csv",sep=',',header=TRUE)
+case.vectors=tapply(s$one,s$site,sum)
+total.vectors = tapply(s$twothr+s$one, s$site, sum)
+prop.test(case.vectors, total.vectors)
+
+#The proportions of AKIs of each severity varied across sites significantly (P<2.2 e-16).
+#Hampshire had the highest proportion of AKI stage 1 (72.40%), and Swansea the lowest (63.62%)
+
+#What proportion of individuals having the first AKIs of the index year have also had prior AKIs?
+
+pr<-read.table("priortest.csv",sep=',',header=TRUE)
+case.prs=tapply(pr$priors,pr$site,sum)
+total.prs = tapply(pr$priors+pr$nopriors, pr$site, sum)
+prop.test(case.prs, total.prs)
+
+#Using a GLM with binned age data:
+ak<-read.table("GLMAKI.csv",header=T,sep=",")
+glm1<-glm(ak$AKI~ak$site+ak$year+ak$gender*ak$age,offset=log(ak$Pop), family=poisson)
+summary(glm1)
+
+#drop year
+glm2<-update(glm1,~.-ak$year)
+summary(glm2)
+anova(glm1,glm2, test="Chisq")
+summary(glm2)
+
+#Significant interaction between age and gender (P=2e-16)
+#AKI incidence was significantly lower in Hampshire and Salford than in Grampian 
+#Can this be accounted for by testing intensity? (Can ti be substituted for site?)
+as.numeric(ak$ti)
+glm3<-glm(ak$AKI~ak$ti+ak$gender*ak$age,offset=log(ak$Pop), family=poisson)
+anova(glm2,glm3, test="Chisq")
+
+#ti cannot be substituted for site
+
+#substitute blood tests for population in the offset 
+glm4<-glm(ak$AKI~ak$site+ak$gender*ak$age,offset=log(ak$tests), family=poisson)
+anova(glm2,glm4, test="Chisq")
+summary(glm4)
+
+#This has a lower residual deviance than the model using population as an offset. 
+#Regional differences in Hampshire remain significant 
+
+#Is the offset important to model fit?
+glm5<-glm(ak$AKI~ak$site+ak$gender*ak$age, family=poisson)
+anova(glm4,glm5, test="Chisq")
+
+#The offset is not significant to model fit, and could be dropped.
