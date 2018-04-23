@@ -1,4 +1,4 @@
-Prior preprocesing: In excel, removed # symbols, removed start tabs from indented rows and edited rows with value in units column.
+Prior preprocesing: In excel, removed # symbols, removed start tabs from indented rows and edited rows with value in units column in order to load into R.
 
 setwd("c:/Users/mqbpjhr4/Documents")
 Patients<-read.table("Patients.csv",header=TRUE, sep=",")
