@@ -139,3 +139,17 @@ d2<-duplicated(quant1[,c("PatID","EntryDate","stcreat")])
 quant3<-quant1[!d2,]
 table(quant3$DateYR)#Numbers of tests per year after same day duplicate removal
 
+#Call the first row of each duplicated pair:
+a<-quant1[duplicated(quant1$Value)&duplicated(quant1$PatID),c("PatID","ReadCode","stcreat","EntryDate")]
+names(a)<-c("PatID","ReadCode","stcreat","DupDate")
+
+#Use the dates of the original duplicated entries as a key to find delayed copies
+a<-a[a$ReadCode=="creatinine",]
+
+#Neardate match each original date to the first duplicate
+
+quant4<-merge(quant1,a,all.x=TRUE)
+attach(quant4)
+quant4$delay<-as.numeric(difftime(strptime(DupDate,"%Y-%m-%d"),strptime(EntryDate,"%Y-%m-%d"),units="days"))
+quant4<-quant4[is.na(quant4$delay)|quant4$delay<=30]
+table(quant4$DateYR)#Numbers of tests per year after 30 day duplicate removal
