@@ -1,0 +1,140 @@
+library(lubridate)
+Patients<-read.table("Patients.csv",header=TRUE, sep=",")
+tests<-read.table("tests.csv",header=TRUE,sep= ",")
+SIR<- merge(Patients,tests,all=TRUE, by='PatID')
+SIR<-SIR[!SIR$ReadCode %in% levels(SIR$ReadCode)[c(2:23)],] #Remove CKD codes originally used for the extraction but not needed here
+levels(as.factor(SIR$PatID))
+#78630
+
+#create new vectors for age, hospital/GP (Full dob not provided)
+SIR$Age<-(as.numeric(year(strptime(SIR$EntryDate, format="%d/%m/%Y"))))-SIR$Year_Of_Birth
+attach(SIR)
+
+#select data from individuals aged 15 and over
+Over<-subset(SIR,SIR$Age>15 & as.numeric(year(strptime(SIR$EntryDate, format="%d/%m/%Y")))>=2009,)
+Over$location<- ifelse(Over$Source=="salfordt", c("Hospital"),("GP"))
+attach(Over)
+
+#Group related read codes
+levels(Over$ReadCode)
+levels(Over$ReadCode)[c(2:23)] <- "drop"
+levels(Over$ReadCode)[c(1,25:38,41)] <- "dialysis"
+levels(Over$ReadCode)[c(3:11)] <- "creatinine"
+levels(Over$ReadCode)[4:7] <- "eGFR"
+levels(Over$ReadCode)[5:15] <- "transplant"
+
+table(Over$ReadCode)
+#Check these manually every time you re-extract/resubset as they will change
+attach(Over)
+
+#Assign more options
+options(expressions=20000)
+Over$EntryDate<-as.Date(as.character(Over$EntryDate), format="%d/%m/%Y")
+
+#Check which units have been used to measure Creatinine and convert #from mg/dL to umol/L if needed
+levels(Over$Units)
+levels(Over$Units)[c(1,10,13,14,16:31,37:41)]<- "mLmin173m2"
+levels(Over$Units)[c(11,13:15,20:23)]<-"umol/L"
+table(Over$Units,Over$ReadCode)
+
+Over$Value<-as.numeric(Over$Value)
+Over$stcreat<- ifelse(Over$Units=="umol/L"| Over$Units=="None",Over$Value,(Over$Value/1000)) 
+Over$stcreat<- ifelse(Over$Units=="pmoloL", as.numeric(Over$Value)/1000000, paste(Over$stcreat)) 
+Over$stcreat<- ifelse(Over$ReadCode=="creatinine",paste(Over$stcreat), paste("NA")) 
+Over$stcreat<-as.numeric(Over$stcreat)
+
+Over$mdrd<- ifelse(Over$Units=="mLo24ho1.73m*2",paste(as.numeric(Over$Value)/1440),paste("NA"))
+Over$mdrd<- ifelse(Over$Units=="mLmin173m2",paste(Over$Value),paste(Over$mdrd)) 
+Over$mdrd<- ifelse(Over$ReadCode=="eGFR",paste(Over$mdrd), paste("NA"))
+Over$mdrd<-as.numeric(Over$mdrd)
+
+#Simplify ethnicity for eGFR calculation (B being black ethnicities, A being other ethnicities)
+levels(Over$Ethnicity)[97:142]<-"A"
+levels(Over$Ethnicity)[3:10]<-"A"
+levels(Over$Ethnicity)[22:27]<-"A"
+levels(Over$Ethnicity)[24:67]<-"A"
+levels(Over$Ethnicity)[26:36]<-"A"
+levels(Over$Ethnicity)[1:2]<-"B"
+levels(Over$Ethnicity)[3:27]<-"B"
+table(Over$Ethnicity)
+
+MONTH<- format(Over$EntryDate, "%m")
+YEAR<- format(Over$EntryDate, "%Y")
+Over$EntryPeriod<-paste(MONTH,YEAR)
+gsub(" ", "", Over$EntryPeriod, fixed = TRUE)
+Over$EntryPeriod<-as.numeric(as.factor(Over$EntryPeriod))
+
+#Generate vector for whether test after commencement of dialysis/transplant
+Over$endpoint<-with(Over, ifelse(Over$ReadCode=="dialysis",paste(Over$EntryDate), "NA")) 
+Over$endpoint<-with(Over, ifelse(Over$ReadCode=="transplant",paste(EntryDate), paste(Over$endpoint)) )
+levels(as.factor(Over$endpoint))
+Over$EntryDate<-as.Date(Over$EntryDate, format="%d/%m/%Y")
+Over$endpoint<-as.Date(Over$endpoint, format="%Y-%m-%d")
+
+#Set up a small table which is just a list of RRT patients and their start RRT dates
+smalltab<-Over[!is.na(Over$endpoint),]
+smalltab<-smalltab[order(smalltab$endpoint),]
+smalltab<-smalltab[,c(“PatID”,”endpoint”)]
+smalltab$PatID
+#Subset of 266 renal Patients
+#Order by first rrt/transplant record
+
+each <- unique(smalltab$PatID)
+a<-length(each)
+first <- c()
+for (i in 1:a) {  temp<-subset(smalltab, PatID==each[i])
+if (dim(temp)[1] < 1) {
+earliest<-temp[dim(temp)[1],]}
+else {earliest<-temp}
+first<-rbind(first, earliest)}
+head(first)
+#first lists earliest instance of dialysis/transplant by PatID
+
+#Create a table of unique PatIDs not related to RRT
+xtab<-Over[is.na(Over$endpoint),c("PatID","endpoint")]
+dupna<-duplicated(xtab[,c(1)])
+xbtab<-xtab[!dupna,]
+
+#Join to give 1 list of all PatIDs and end dates if relevant
+P<-rbind(first,xbtab)
+length(levels(as.factor(P$PatID))) #77537, 77381
+length(levels(as.factor(first$PatID))) #132
+length(levels(as.factor(xbtab$PatID))) #77536, 77380
+dupnp<-duplicated(P[,c(1)])
+P<-P[!dupnp,]
+
+#Merge P onto original table
+Over2<- merge(Over,P,by='PatID')
+levels(as.factor(Over2$PatID))
+#77537
+#endpoint is now added to all records of RRT patients
+which(!is.na(Over2$endpoint.y))
+Over2$rrt<- as.numeric((Over2$EntryDate)-(Over2$endpoint.y))
+
+length(Over2$PatID)
+Over2<-Over2[Over2$rrt>0|is.na(Over2$rrt),]
+length(levels(as.factor(Over2$PatID)))
+#75530 patients
+
+#Remove all dialysis/transplant records after start of dialysis
+table(Over2$ReadCode)
+Over2<-Over2[Over2$ReadCode=="creatinine"|Over2$ReadCode=="eGFR",]
+table(Over2$ReadCode)
+indexnorrt<-subset(Over2,as.numeric(year(strptime(Over2$EntryDate, format="%Y-%m-%d")))==2012,)
+indexd<-indexnorrt[indexnorrt$ReadCode=="creatinine",]
+length(indexd$PatID)
+
+quant1<-Over2[Over2$ReadCode=="creatinine",]
+quant1$DateYR<-(as.numeric(year(strptime(quant1$EntryDate, format="%d/%m/%Y"))))
+table(quant1$DateYR)#Numbers of tests per year before duplicate removal
+
+quant1$stcreat<-as.numeric(quant1$stcreat)
+quant1$PatID<-as.numeric(quant1$PatID)
+quant1<-quant1[order(quant1$PatID,rev(quant1$EntryDate)),]
+d<-duplicated(quant1[,c("PatID","EntryPeriod","stcreat")])
+quant2<-quant2[!d,]
+table(quant2$DateYR)#Numbers of tests per year after same month duplicate removal
+
+
+
+
