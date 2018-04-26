@@ -135,5 +135,7 @@ d<-duplicated(quant1[,c("PatID","EntryPeriod","stcreat")])
 quant2<-quant1[!d,]
 table(quant2$DateYR)#Numbers of tests per year after same month duplicate removal
 
-quant3<-quant1
+d2<-duplicated(quant1[,c("PatID","EntryDate","stcreat")])
+quant3<-quant1[!d2,]
+table(quant3$DateYR)#Numbers of tests per year after same day duplicate removal
 
