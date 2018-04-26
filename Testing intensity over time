@@ -132,7 +132,7 @@ quant1$stcreat<-as.numeric(quant1$stcreat)
 quant1$PatID<-as.numeric(quant1$PatID)
 quant1<-quant1[order(quant1$PatID,rev(quant1$EntryDate)),]
 d<-duplicated(quant1[,c("PatID","EntryPeriod","stcreat")])
-quant2<-quant2[!d,]
+quant2<-quant1[!d,]
 table(quant2$DateYR)#Numbers of tests per year after same month duplicate removal
 
 quant3<-quant1
