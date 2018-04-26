@@ -11,7 +11,7 @@ SIR$Age<-(as.numeric(year(strptime(SIR$EntryDate, format="%d/%m/%Y"))))-SIR$Year
 attach(SIR)
 
 #select data from individuals aged 15 and over
-Over<-subset(SIR,SIR$Age>15 & as.numeric(year(strptime(SIR$EntryDate, format="%d/%m/%Y")))>=2009,)
+Over<-subset(SIR,SIR$Age>15,)
 Over$location<- ifelse(Over$Source=="salfordt", c("Hospital"),("GP"))
 attach(Over)
 
@@ -96,7 +96,7 @@ dupna<-duplicated(xtab[,c(1)])
 xbtab<-xtab[!dupna,]
 
 #Join to give 1 list of all PatIDs and end dates if relevant
-P<-rbind(first,xbtab)
+P<-rbind(first[,c(1,24)],xbtab)
 length(levels(as.factor(P$PatID))) #77537, 77381
 length(levels(as.factor(first$PatID))) #132
 length(levels(as.factor(xbtab$PatID))) #77536, 77380
@@ -125,7 +125,7 @@ indexd<-indexnorrt[indexnorrt$ReadCode=="creatinine",]
 length(indexd$PatID)
 
 quant1<-Over2[Over2$ReadCode=="creatinine",]
-quant1$DateYR<-(as.numeric(year(strptime(quant1$EntryDate, format="%d/%m/%Y"))))
+quant1$DateYR<-(as.numeric(year(strptime(quant1$EntryDate, format="%Y-%m-%d"))))
 table(quant1$DateYR)#Numbers of tests per year before duplicate removal
 
 quant1$stcreat<-as.numeric(quant1$stcreat)
@@ -135,6 +135,5 @@ d<-duplicated(quant1[,c("PatID","EntryPeriod","stcreat")])
 quant2<-quant2[!d,]
 table(quant2$DateYR)#Numbers of tests per year after same month duplicate removal
 
-
-
+quant3<-quant1
 
