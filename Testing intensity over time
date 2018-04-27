@@ -151,5 +151,10 @@ a<-a[a$ReadCode=="creatinine",]
 quant4<-merge(quant1,a,all.x=TRUE)
 attach(quant4)
 quant4$delay<-as.numeric(difftime(strptime(DupDate,"%Y-%m-%d"),strptime(EntryDate,"%Y-%m-%d"),units="days"))
-quant4<-quant4[is.na(quant4$delay)|quant4$delay>30]
-table(quant4$DateYR)#Numbers of tests per year after 30 day duplicate removal
+ax<-quant4[!is.na(quant4$delay)|quant4$delay<=30,c(1,3,28)]
+names(ax)<-c("PatID","stcreat","EntryDate")
+ax<-ax[!is.na(ax$PatID),]
+ax$rm<-1
+quant4<-merge(quant4,ax,all.x=TRUE)
+quant4<-quant4[!quant4$rm==1,]
+table(quant4$DateYR)#Numbers of tests per year after 30 day or less duplicate removal
