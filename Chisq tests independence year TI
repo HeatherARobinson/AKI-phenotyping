@@ -1,0 +1,11 @@
+#Data only same day duplicates removed (as by algorithm)
+TIa<-read.csv("TI_input_samedaydup.csv")
+chisq.test(TIa) #p=0.999
+
+TIb<-read.csv("TI_input_samemonthdup.csv")
+chisq.test(TIb) #p=0.999
+
+TIc<-read.csv("TI_input_30daydup.csv")
+chisq.test(TIc) #p=0.9854
+
+#No significant relationship between year and testing intensity
