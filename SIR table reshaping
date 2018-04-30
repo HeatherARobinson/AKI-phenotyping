@@ -221,10 +221,10 @@ length(Over4$PatID)
 #Write an input file for STATA with headings needed for Aberdeen algorithm
 attach(Over4)
 
-SIRinput_conf<-file(paste("SIR_Rinput_conf.csv"), open="w")
-cat("studyid","dos","stcreat","mdrd","location_code","age","sex","\n", sep=",",file="SIR_Rinput_conf.csv",append=TRUE)
+SIRinput_all30<-file(paste("SIR_Rinput_all30.csv"), open="w")
+cat("studyid","dos","stcreat","mdrd","location_code","age","sex","\n", sep=",",file="SIR_Rinput_all30.csv",append=TRUE)
 
 for (n in 1:length(Over4$PatID)){ #Change loop number to number of records in dataset
-cat((paste(Over4$PatID[n])),(paste(Over4$EntryDate[n])), (paste(Over4$stcreat[n])),(paste(Over4$mdrd[n])), (paste(Over4$Source[n])),(paste(Over4$Age[n])),(paste(Over4$Sex[n])), "\n", file="SIR_Rinput_conf.csv", sep=",", fill=FALSE, labels=NULL, append=TRUE)}
+cat((paste(Over4$PatID[n])),(paste(Over4$EntryDate[n])), (paste(Over4$stcreat[n])),(paste(Over4$mdrd[n])), (paste(Over4$Source[n])),(paste(Over4$Age[n])),(paste(Over4$Sex[n])), "\n", file="SIR_Rinput_all30.csv", sep=",", fill=FALSE, labels=NULL, append=TRUE)}
 
 
