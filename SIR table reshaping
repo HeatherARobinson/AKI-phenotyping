@@ -114,12 +114,12 @@ head(first)
 #first lists earliest instance of dialysis/transplant by PatID
 
 #Create a table of unique PatIDs not related to RRT
-xtab<-Over[is.na(Over$endpoint),c(“PatID”,”endpoint”)]
+xtab<-Over[is.na(Over$endpoint),c("PatID","endpoint")]
 dupna<-duplicated(xtab[,c(1)])
 xbtab<-xtab[!dupna,]
 
 #Join to give 1 list of all PatIDs and end dates if relevant
-P<-rbind(first,xbtab)
+P<-rbind(first[,c(1,24)],xbtab)
 length(levels(as.factor(P$PatID))) #77537, 77381
 length(levels(as.factor(first$PatID))) #132
 length(levels(as.factor(xbtab$PatID))) #77536, 77380
@@ -152,6 +152,7 @@ table(quant2$ReadCode)
 #Gives the number of creatinine values for the index year
 #after renal patient test removal
 
+###########################################SECTIONS BELOW DETAIL 2 WAYS TO REMOVE DELAYED DUPLICATES
 #REMOVE DUPLICATES WITHIN THE SAME CALENDAR MONTH
 #Delete all duplicates within the same calendar month
 Over2$stcreat<-as.numeric(Over2$stcreat)
@@ -160,6 +161,22 @@ Over2<-Over2[order(Over2$PatID,rev(Over2$EntryDate)),]
 d<-duplicated(Over2[,c("PatID","EntryPeriod","stcreat")])
 Over2<-Over2[!d,]
 Over2<-Over2[,c("PatID","Sex","Ethnicity","Source","EntryDate","Age","stcreat","mdrd")]
+############################################
+OR
+#############################################
+#REMOVE DUPLICATES OCCURING WITHIN 30 DAYS
+Over2$stcreat<-as.numeric(Over2$stcreat)
+Over2$PatID<-as.numeric(Over2$PatID)
+a<-Over2[duplicated(Over2$Value)&duplicated(Over2$PatID)&!duplicated(Over2$Source),c("PatID","ReadCode","stcreat","EntryDate")]
+names(a)<-c("PatID","ReadCode","stcreat","DupDate")
+a<-a[a$ReadCode=="creatinine",]
+
+#Neardate match each original date to the first duplicate
+Over2<-merge(Over2,a,all.x=TRUE)
+attach(Over2)
+Over2$delay<-as.numeric(difftime(strptime(DupDate,"%Y-%m-%d"),strptime(EntryDate,"%Y-%m-%d"),units="days"))
+length(Over2$delay[Over2$delay>1 & Over2$delay<=30])
+Over2<-Over2[is.na(Over2$delay)|Over2$delay>30,]
 
 #Reshape table so mdrd and stcreat are on the same line to avoid STATA issues
 Overb<-aggregate(x=Over2[c("stcreat","mdrd")], by=list(PatID=Over2$PatID,EntryDate=Over2$EntryDate,Age=Over2$Age,Sex=Over2$Sex,Ethnicity=Over2$Ethnicity,Source=Over2$Source), min, na.rm = TRUE)
