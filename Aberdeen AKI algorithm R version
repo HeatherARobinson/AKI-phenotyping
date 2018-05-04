@@ -55,7 +55,7 @@ attach(a)
 ###############################################################################################CHECKED
 
 #GENERATE A "PROTAGONIST" VARIABLE THAT IS THE CUMULATIVE COUNT OF EACH BLOOD SAMPLE AFTER JANUARY 1st 2003
-#WHERE 2003 IS THE INCIDENT YEAR; AND AKI EPISODES FROM 2000 TO 2003 ARE MARKED AS PRIOR EPISODES
+#WHERE 2012 IS THE INCIDENT YEAR; AND AKI EPISODES FROM 2009 TO 2012 ARE MARKED AS PRIOR EPISODES
 
 #SELECT AS APPROPRIATE
 #index<-which(dos>=40907 & dos<=41272) #works for STATA date formats (INDEX 2012)
@@ -73,13 +73,13 @@ a$yr03<-0
 a$yr03[index]<-1 #MARK INDEX YEAR
 
 #SELECT AS APPROPRIATE
-a$post2000<-ifelse(dos>=14244,1,0) #sample after 1st jan 
-#a$post2000<-ifelse(dmy(dos)>=ymd("2000-01-01"),1,0) #sample after 1st jan 
+a$post2009<-ifelse(dos>=14244,1,0) #sample after 1st jan 
+#a$post2009<-ifelse(dmy(dos)>=ymd("2009-01-01"),1,0) #sample after 1st jan 
 
-a <-a[a$post2000==1,] 
+a <-a[a$post2009==1,] 
 attach(a)
 
-#############################################################################################
+############################################################################################# CHECKED 0405
 require(dplyr)
 sorted <- a %>% 
           arrange(studyid,dos) %>%
@@ -110,7 +110,7 @@ weekmarker<-NA
 daymarker<-NA
 a <-a[order(studyid, dos),] 
 attach(a)
-
+dos<-as.numeric(dos)
 pb<-tkProgressBar(title="progress bar",min=0,max=max(protagonist),width=300) #indicates progress through the loop
 for (i in 1:max(protagonist)) {
 
@@ -187,7 +187,6 @@ a<-a[with(a, order(studyid,AKIcounter,dos)),]
 attach(a)
 a$AKIspellcounter<-ave(AKIcounter,studyid,FUN = seq_along)#nth AKI blood test within each AKI episode
 
-
 #MARK FIRST AKI IN 2003 AND ITS CONSTITUENT PARTS (YOU NEED THE SPELLCOUNTER VARIABLE AS SOME EPISODES OVERLAP FROM 2002)
 #THE IDEA HERE IS TO FLAG UP THE FIRST 2003 AKI EPISODE AND NOT ANY EARLIER EPISODES THAT HAPPENED 2000-2002 (THEY ARE ONLY RELEVANT IN THAT THEY ARE PRIOR EPISODES FOR COUNTING)
 
@@ -195,7 +194,6 @@ a <- a[with(a,order(studyid,newAKI, AKIspellcounter,yr03, dos)),]
 attach(a)
 
 ############################################################################################	CHECKED
-
 
 firstAKI<-ifelse(newAKI==1& AKIspellcounter==1& yr03==1&AKIspellcounter==min(AKIspellcounter),1,NA)
 afirstAKI<-aggregate(.~studyid, a[newAKI==1& AKIspellcounter==1& yr03==1,], FUN=head, 1)
