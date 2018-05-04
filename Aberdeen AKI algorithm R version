@@ -45,7 +45,8 @@ a <- a[order(-as.numeric(stcreat)),] #The highest stcreat per day will be retain
 table(duplicated(a[,1:2]))
 a<-a[ !duplicated(a[,1:2]), ] #drop other stcreat values
 length(a$studyid) #Number of records following duplicate removal
-a<-a[!is.na(a$stcreat),]
+a<-a[!is.na(as.numeric(a$stcreat)),]
+attach(a)
 
 a<-a[!a$mdrd>250,]
 length(a$studyid) #Remaining entries after removing missing and impossible values
@@ -72,7 +73,7 @@ a$yr03<-0
 a$yr03[index]<-1 #MARK INDEX YEAR
 
 #SELECT AS APPROPRIATE
-a$post2000<-ifelse(dos>=39812,1,0) #sample after 1st jan 
+a$post2000<-ifelse(dos>=14244,1,0) #sample after 1st jan 
 #a$post2000<-ifelse(dmy(dos)>=ymd("2000-01-01"),1,0) #sample after 1st jan 
 
 a <-a[a$post2000==1,] 
@@ -120,7 +121,7 @@ yearmarker<-ifelse((protagonistdos-dos)<=365 & (protagonistdos-dos)>90,1,yearmar
 weekmarker<-ifelse((protagonistdos-dos)<=7 & !protagonistdos==dos,1,weekmarker)
 monthmarker<-ifelse((protagonistdos-dos)<=90 &(protagonistdos-dos)>=8,1,monthmarker)
 daymarker<-ifelse((protagonistdos-dos)<=2 & !protagonistdos==dos,1,daymarker)
-mightyvalue<-ifelse(protagonist==i,stcreat,NA)
+mightyvalue<-ifelse(protagonist==protagonist[i],stcreat,NA)
 protagonistvalue<-ave(mightyvalue[!is.na(mightyvalue)],studyid,FUN=max)
 
 #finds the index (investigated) creatinine of key interest, applies this value across all patient samples
@@ -147,13 +148,13 @@ daymin<-ave(dayvalue[!is.na(dayvalue)],studyid,FUN=min)
 
 ############################################################################################
 for (i in 1:length(protagonist)) {
-
-AKIyear<-ifelse((protagonistvalue/yearmedian)>=1.5 & protagonist==i&!is.na(yearmedian) & is.na(monthmedian),1,0)
+protagonistvalue<-as.numeric(protagonistvalue)
+AKIyear<-ifelse((protagonistvalue/as.numeric(yearmedian))>=1.5 & protagonist==i&!is.na(yearmedian) & is.na(monthmedian),1,0)
 #year AKI can only be tested if there is not a monthmedian already available for the sample, thus monthmedian sample needs to be missing before looking back further
 
-AKIweek<-ifelse((protagonistvalue/weekmin)>=1.5 & protagonist==i & !is.na(weekmin),1,0)
-AKIday<-ifelse((protagonistvalue-daymin)>26 & protagonist==i & !is.na(daymin),1,0)
-AKImonth<-ifelse((protagonistvalue/monthmedian)>=1.5 & protagonist==i & !is.na(monthmedian),1,0) 
+AKIweek<-ifelse((protagonistvalue/as.numeric(weekmin))>=1.5 & protagonist==i & !is.na(weekmin),1,0)
+AKIday<-ifelse((protagonistvalue-as.numeric(daymin))>26 & protagonist==i & !is.na(daymin),1,0)
+AKImonth<-ifelse((protagonistvalue/as.numeric(monthmedian))>=1.5 & protagonist==i & !is.na(monthmedian),1,0) 
 ### flags samples meeting AKI criteria, (non missing option vital)
 }
 #END OF LOOP
