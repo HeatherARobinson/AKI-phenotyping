@@ -9,6 +9,7 @@
 #lubridate
 
 ############################################################################################
+
 #PART 0 - INITIAL VARIABLE CHECKLIST
 
 #studyid = unique id number for patient
@@ -34,18 +35,18 @@ setwd("c:/Users/mqbpjhr4/Documents")
 
 library (taRifx)
 library (dplyr)
-library(tcltk)
+library(tcltk2)
 library(lubridate)
+library(haven)
 
-a<-read.table("testrversion.csv",sep=",",header=TRUE)
+a<-read_dta("mock dataset.dta")
 attach(a)
-destring(c(studyid,stcreat,age,sex,dos,mdrd))
-
-a <- a[order(-stcreat),] #The highest stcreat per day will be retained
+a <- a[order(-as.numeric(stcreat)),] #The highest stcreat per day will be retained
 table(duplicated(a[,1:2]))
 a<-a[ !duplicated(a[,1:2]), ] #drop other stcreat values
 length(a$studyid) #Number of records following duplicate removal
 a<-a[!is.na(a$stcreat),]
+
 a<-a[!a$mdrd>250,]
 length(a$studyid) #Remaining entries after removing missing and impossible values
 attach(a)
@@ -56,7 +57,15 @@ attach(a)
 #WHERE 2003 IS THE INCIDENT YEAR; AND AKI EPISODES FROM 2000 TO 2003 ARE MARKED AS PRIOR EPISODES
 
 #SELECT AS APPROPRIATE
-index<-which(dos>=40907 & dos<=41272) #works for excel/STATA date formats
+#index<-which(dos>=40907 & dos<=41272) #works for STATA date formats (INDEX 2012)
+
+#OR for R date formats (INDEX 2012):
+index<-which(dos>=18991 & dos<=19357) #works for STATA date formats (INDEX 2012)
+
+#STATA dates count from 01/01/1960
+#Excel dates count from 01/01/1900
+#R dates count from 01/01/1970
+
 #index<-which(dmy(dos)>=ymd("2012-01-01")&dmy(dos)<ymd("2013-01-01")) #Option for traditional format dates
 
 a$yr03<-0
