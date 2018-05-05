@@ -26,8 +26,6 @@
 
 ############################################################################################
 
-setwd("c:/Users/mqbpjhr4/Documents")
-
 # PART 1 - CHECK AND ORGANISE VARIABLES
 #This section ensures dates are recognised by R
 #destrings numeric variables
@@ -132,10 +130,10 @@ close(pb)
 
 #The above variables mark the dates of blood tests that fit the ealert AKI windows or those required for sensitivity analysis
 
-yearvalue<-ifelse(yearmarker==1,stcreat,NA)
-weekvalue<-ifelse(weekmarker==1,stcreat,NA)
-monthvalue<-ifelse(monthmarker==1,stcreat,NA)
-dayvalue<-ifelse(daymarker==1,stcreat,NA)
+yearvalue<-as.numeric(ifelse(yearmarker==1,stcreat,NA))
+weekvalue<-as.numeric(ifelse(weekmarker==1,stcreat,NA))
+monthvalue<-as.numeric(ifelse(monthmarker==1,stcreat,NA))
+dayvalue<-as.numeric(ifelse(daymarker==1,stcreat,NA))
 
 #finds the appropriate creatinine within these windows, excludes missing creatinines which would all be exceptionally high
 
@@ -144,17 +142,20 @@ yearmedian<-ave(yearvalue[!is.na(yearvalue)],studyid, FUN=median)
 weekmin<-ave(weekvalue[!is.na(weekvalue)],studyid,FUN=min)
 monthmedian<-ave(monthvalue[!is.na(monthvalue)],studyid,FUN=median)
 daymin<-ave(dayvalue[!is.na(dayvalue)],studyid,FUN=min)
+There were 24 warnings
 #applies the optimal reference creatinine across all patient samples
 
 ############################################################################################
-for (i in 1:length(protagonist)) {
 protagonistvalue<-as.numeric(protagonistvalue)
-AKIyear<-ifelse((protagonistvalue/as.numeric(yearmedian))>=1.5 & protagonist==i&!is.na(yearmedian) & is.na(monthmedian),1,0)
+
+for (i in 1:length(protagonist)) {
+
+AKIyear<-ifelse((protagonistvalue/yearmedian)>=1.5 & protagonist==i&!is.na(yearmedian) & is.na(monthmedian),1,0)
 #year AKI can only be tested if there is not a monthmedian already available for the sample, thus monthmedian sample needs to be missing before looking back further
 
-AKIweek<-ifelse((protagonistvalue/as.numeric(weekmin))>=1.5 & protagonist==i & !is.na(weekmin),1,0)
-AKIday<-ifelse((protagonistvalue-as.numeric(daymin))>26 & protagonist==i & !is.na(daymin),1,0)
-AKImonth<-ifelse((protagonistvalue/as.numeric(monthmedian))>=1.5 & protagonist==i & !is.na(monthmedian),1,0) 
+AKIweek<-ifelse((protagonistvalue/weekmin)>=1.5 & protagonist==i & !is.na(weekmin),1,0)
+AKIday<-ifelse((protagonistvalue-daymin)>26 & protagonist==i & !is.na(daymin),1,0)
+AKImonth<-ifelse((protagonistvalue/monthmedian)>=1.5 & protagonist==i & !is.na(monthmedian),1,0) 
 ### flags samples meeting AKI criteria, (non missing option vital)
 }
 #END OF LOOP
