@@ -129,13 +129,26 @@ protagonistdos<-as.numeric(ave(mightydate,studyid,FUN=max))
 
 ############################################################################################ CHECKED 0805
 
-yearmarker<-ifelse((protagonistdos-dos)<=365 & (protagonistdos-dos)>90,1,yearmarker)
-weekmarker<-ifelse((protagonistdos-dos)<=7 & !protagonistdos==dos,1,weekmarker)
-monthmarker<-ifelse((protagonistdos-dos)<=90 &(protagonistdos-dos)>=8,1,monthmarker)
-daymarker<-ifelse((protagonistdos-dos)<=2 & !protagonistdos==dos,1,daymarker)
+yearmarker[i]<-ifelse((protagonistdos-dos[i])<=365 & (protagonistdos-dos[i])>90,1,yearmarker)
+weekmarker[i]<-ifelse((protagonistdos-dos[i])<=7 & !protagonistdos==dos[i],1,weekmarker)
+monthmarker[i]<-ifelse((protagonistdos-dos[i])<=90 &(protagonistdos-dos[i])>=8,1,monthmarker)
+daymarker[i]<-ifelse((protagonistdos-dos[i])<=2 & !protagonistdos==dos[i],1,daymarker)
 
-mightyvalue<-ifelse(protagonist==protagonist[i],stcreat,NA)
-protagonistvalue<-ave(mightyvalue[!is.na(mightyvalue)],studyid,FUN=max)
+yearvalue[i]<-as.numeric(ifelse(yearmarker[i]==1,stcreat[i],NA))
+weekvalue[i]<-as.numeric(ifelse(weekmarker[i]==1,stcreat[i],NA))
+monthvalue[i]<-as.numeric(ifelse(monthmarker[i]==1,stcreat[i],NA))
+dayvalue[i]<-as.numeric(ifelse(daymarker[i]==1,stcreat[i],NA))
+
+#finds the appropriate creatinine within these windows, excludes missing creatinines which would all be exceptionally high
+
+yearmedian[i]<-ave(as.numeric(yearvalue),studyid==studyid[i],FUN = function(x) median(x, na.rm = TRUE))
+weekmin[i]<-ave(as.numeric(weekvalue),studyid==studyid[i],FUN = function(x) min(x, na.rm = TRUE))
+monthmedian[i]<-ave(as.numeric(monthvalue),studyid==studyid[i],FUN = function(x) median(x, na.rm = TRUE))
+daymin[i]<-ave(as.numeric(weekvalue),studyid==studyid[i],FUN = function(x) min(x, na.rm = TRUE))
+
+mightyvalue<-NA
+mightyvalue<-stcreat[i]
+protagonistvalue<-ave(mightyvalue,studyid,FUN = function(x) max(x, na.rm = TRUE))
 
 #finds the index (investigated) creatinine of key interest, applies this value across all patient samples
 }
@@ -144,13 +157,6 @@ protagonistvalue<-ave(mightyvalue[!is.na(mightyvalue)],studyid,FUN=max)
 close(pb)
 
 #The above variables mark the dates of blood tests that fit the ealert AKI windows or those required for sensitivity analysis
-
-yearvalue<-as.numeric(ifelse(yearmarker==1,stcreat,NA))
-weekvalue<-as.numeric(ifelse(weekmarker==1,stcreat,NA))
-monthvalue<-as.numeric(ifelse(monthmarker==1,stcreat,NA))
-dayvalue<-as.numeric(ifelse(daymarker==1,stcreat,NA))
-
-#finds the appropriate creatinine within these windows, excludes missing creatinines which would all be exceptionally high
 
 memory.limit(4000)
 yearmedian<-ave(yearvalue[!is.na(yearvalue)],studyid, FUN=median)
