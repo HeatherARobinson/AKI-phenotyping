@@ -96,6 +96,7 @@ summary(protagonist)
 
 newAKI<-0
 AKImonth<-0
+}
 AKIyear<-0
 AKIweek<-0
 AKIday<-0
