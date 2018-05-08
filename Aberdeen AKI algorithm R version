@@ -125,7 +125,7 @@ setTkProgressBar(pb,i,label=paste(round(i/(max(protagonist))*100, 0),"% done"))
 mightydate<-ifelse(protagonist==protagonist[i]& studyid==studyid[i],dos[i],mightydate)
 protagonistdos<-as.numeric(ave(mightydate,studyid,FUN=max))
 
-############################################################################################ CHECKED 0805
+########################################################################################## CHECKED 0805
 a$yearmarker[i]<-ifelse((protagonistdos-dos[i])<=365 & (protagonistdos-dos[i])>90,1,a$yearmarker)
 a$weekmarker[i]<-ifelse((protagonistdos-dos[i])<=7 & !protagonistdos==dos[i],1,weekmarker)
 a$monthmarker[i]<-ifelse((protagonistdos-dos[i])<=90 &(protagonistdos-dos[i])>=8,1,monthmarker)
@@ -153,14 +153,12 @@ a$protagonistvalue<-as.numeric(ave(a$mightyvalue,a$studyid,FUN = function(x) max
 a$AKIyear<-ifelse((a$protagonistvalue/a$yearmedian)>=1.5 & !is.na(a$yearmedian) & is.na(a$monthmedian),1,0)
 #year AKI can only be tested if there is not a monthmedian already available for the sample, thus monthmedian sample needs to be missing before looking back further
 a$AKIweek<-ifelse((a$protagonistvalue/a$weekmin)>=1.5 & !is.na(a$weekmin),1,0)
-a$AKIday<-ifelse((a$protagonistvalue-a$daymin[i])>26 & !is.na(a$daymin[i]),1,0)
-a$AKImonth<-ifelse((a$protagonistvalue/a$monthmedian[i])>=1.5 & !is.na(a$monthmedian),1,0) 
+a$AKIday<-ifelse((a$protagonistvalue-a$daymin)>26 & !is.na(a$daymin),1,0)
+a$AKImonth<-ifelse((a$protagonistvalue/a$monthmedian)>=1.5 & !is.na(a$monthmedian),1,0) 
 ### flags samples meeting AKI criteria, (non missing option vital)
-}
-#END OF LOOP
 
 #DEVELOP COMBINED GROUPS AND MARK FIRST AKI
-newAKI<-ifelse(AKIyear==1|AKIweek==1|AKIday==1|AKImonth==1,1,0) #AKI qualifying blood test
+a$newAKI<-ifelse(a$AKIyear==1|a$AKIweek==1|a$AKIday==1|a$AKImonth==1,1,0) #AKI qualifying blood test
 
 ############################################################################################CHECKED
 
