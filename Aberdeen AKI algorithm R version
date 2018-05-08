@@ -50,7 +50,7 @@ a<-a[!a$mdrd>250,]
 length(a$studyid) #Remaining entries after removing missing and impossible values
 attach(a)
 
-###############################################################################################CHECKED
+###############################################################################################
 
 #GENERATE A "PROTAGONIST" VARIABLE THAT IS THE CUMULATIVE COUNT OF EACH BLOOD SAMPLE AFTER JANUARY 1st 2003
 #WHERE 2012 IS THE INCIDENT YEAR; AND AKI EPISODES FROM 2009 TO 2012 ARE MARKED AS PRIOR EPISODES
@@ -77,7 +77,6 @@ a$post2009<-ifelse(dos>=14244,1,0) #sample after 1st jan
 a <-a[a$post2009==1,] 
 attach(a)
 
-############################################################################################# CHECKED 0405
 require(dplyr)
 sorted <- a %>% 
           arrange(studyid,dos) %>%
@@ -86,9 +85,12 @@ sorted <- a %>%
 a<-data.frame(sorted)
 attach(a)
 summary(protagonist)
-############################################################################################
+
+############################################################################################# 
 
 # PART 2 - LOOP FOR AKI FLAGS 
+
+############################################################################################
 #LOOP FORMATION FOR COMPARING EACH TEST WITH PREVIOUS TESTS
 #CREATE A MARKER VARIABLE FOR EACH TIME AKI EALERT CRITERIA SATISFIED
 
@@ -101,24 +103,37 @@ max(protagonist) #number of loop iterations needed.
 
 #LOOP for x values, where x = the highest number of tests a patient had in the index year (max(protagonist)) 
 mightydate<-NA
+mightyvalue<-NA
+protagonistvalue<-NA
 protagonistdos<-NA
 yearmarker<-NA
 monthmarker<-NA
 weekmarker<-NA
 daymarker<-NA
+yearmedian<-NA
+weekmin<-NA
+daymin<-NA
+yearvalue<-NA
+weekvalue<-NA
+dayvalue<-NA
 a <-a[order(studyid, dos),] 
 attach(a)
+
 dos<-as.numeric(dos)
 pb<-tkProgressBar(title="progress bar",min=0,max=max(protagonist),width=300) #indicates progress through the loop
 for (i in 1:max(protagonist)) {
 
 setTkProgressBar(pb,i,label=paste(round(i/(max(protagonist))*100, 0),"% done"))
-mightydate<-ifelse(protagonist==i,dos,mightydate)
+mightydate<-ifelse(protagonist==protagonist[i]& studyid==studyid[i],dos[i],mightydate)
 protagonistdos<-as.numeric(ave(mightydate,studyid,FUN=max))
+
+############################################################################################ CHECKED 0805
+
 yearmarker<-ifelse((protagonistdos-dos)<=365 & (protagonistdos-dos)>90,1,yearmarker)
 weekmarker<-ifelse((protagonistdos-dos)<=7 & !protagonistdos==dos,1,weekmarker)
 monthmarker<-ifelse((protagonistdos-dos)<=90 &(protagonistdos-dos)>=8,1,monthmarker)
 daymarker<-ifelse((protagonistdos-dos)<=2 & !protagonistdos==dos,1,daymarker)
+
 mightyvalue<-ifelse(protagonist==protagonist[i],stcreat,NA)
 protagonistvalue<-ave(mightyvalue[!is.na(mightyvalue)],studyid,FUN=max)
 
