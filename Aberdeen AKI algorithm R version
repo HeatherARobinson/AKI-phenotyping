@@ -148,35 +148,15 @@ daymin[i]<-ave(as.numeric(weekvalue),studyid==studyid[i],FUN = function(x) min(x
 
 mightyvalue<-NA
 mightyvalue<-stcreat[i]
-protagonistvalue<-ave(mightyvalue,studyid,FUN = function(x) max(x, na.rm = TRUE))
-
+protagonistvalue<-as.numeric(ave(mightyvalue,studyid,FUN = function(x) max(x, na.rm = TRUE)))
 #finds the index (investigated) creatinine of key interest, applies this value across all patient samples
-}
 
-#END OF LOOP
-close(pb)
-
-#The above variables mark the dates of blood tests that fit the ealert AKI windows or those required for sensitivity analysis
-
-memory.limit(4000)
-yearmedian<-ave(yearvalue[!is.na(yearvalue)],studyid, FUN=median)
-weekmin<-ave(weekvalue[!is.na(weekvalue)],studyid,FUN=min)
-monthmedian<-ave(monthvalue[!is.na(monthvalue)],studyid,FUN=median)
-daymin<-ave(dayvalue[!is.na(dayvalue)],studyid,FUN=min)
-There were 24 warnings
-#applies the optimal reference creatinine across all patient samples
-
-############################################################################################
-protagonistvalue<-as.numeric(protagonistvalue)
-
-for (i in 1:length(protagonist)) {
-
-AKIyear<-ifelse((protagonistvalue/yearmedian)>=1.5 & protagonist==i&!is.na(yearmedian) & is.na(monthmedian),1,0)
+AKIyear[i]<-ifelse((protagonistvalue[i]/yearmedian[i])>=1.5 & protagonist==protagonist[i]&!is.na(yearmedian[i]) & is.na(monthmedian[i]),1,0)
 #year AKI can only be tested if there is not a monthmedian already available for the sample, thus monthmedian sample needs to be missing before looking back further
 
-AKIweek<-ifelse((protagonistvalue/weekmin)>=1.5 & protagonist==i & !is.na(weekmin),1,0)
-AKIday<-ifelse((protagonistvalue-daymin)>26 & protagonist==i & !is.na(daymin),1,0)
-AKImonth<-ifelse((protagonistvalue/monthmedian)>=1.5 & protagonist==i & !is.na(monthmedian),1,0) 
+AKIweek[i]<-ifelse((protagonistvalue/weekmin[i])>=1.5 & protagonist==protagonist[i] & !is.na(weekmin[i]),1,0)
+AKIday[i]<-ifelse((protagonistvalue-daymin[i])>26 & protagonist==protagonist[i] & !is.na(daymin[i]),1,0)
+AKImonth[i]<-ifelse((protagonistvalue/monthmedian[i])>=1.5 & protagonist==protagonist[i] & !is.na(monthmedian[i]),1,0) 
 ### flags samples meeting AKI criteria, (non missing option vital)
 }
 #END OF LOOP
@@ -187,11 +167,32 @@ newAKI<-ifelse(AKIyear==1|AKIweek==1|AKIday==1|AKImonth==1,1,0) #AKI qualifying 
 ############################################################################################CHECKED
 
 # PART 3 - PROCESSING OF AKI FLAGS
+#Split into AKI 'episodes'
+#DIVIDE AKI INTO 90 DAY SESSIONS
+#Assign an akicounter value of 1 to all AKI blood tests
 
-#DIVIDE AKI INTO 90 DAY SESSIONS (UP TO TEN)
-AKIcounter<-ifelse(newAKI==1,1,NA) #AKI episode counter starting from 2000
-a <- a[order(studyid,AKIcounter,dos),]
+a<-a[AKIweek==1|AKIyear==1|AKIday==1,]
+a<-a[order(studyid,dos),]
+a$AKIcounter<-1
+a$studyid<-as.factor(a$studyid)
+
 attach(a)
+library(data.table)
+a<-as.data.table(a)
+a[, lag.date := c(NA, dos[-.N]), by = studyid]
+a$add<-ifelse(as.numeric(dos)-a$lag.date>90,1,0)
+attach(a)
+
+#Add +1 to aki counter if the date of the sample was >90 days after the first sample with an akicounter value of 1
+a$add<-ifelse(is.na(a$add),0,a$add)
+a$AKIcounter==1
+
+for(x in 2:length(a$AKIcounter)){
+a$AKIcounter[x]<-ifelse(studyid[x]==studyid[x-1],
+a$AKIcounter[x-1]+a$add[x],1)}
+summary(a$AKIcounter)
+a$AKIcounter<-ifelse(a$AKIcounter>10,10,a$AKIcounter)
+
 for(x in 1:10) {
 counterdate<-ifelse(AKIcounter==x,ave(as.numeric(dos),studyid,FUN=min),NA)
 AKIcounter<-ifelse((as.numeric(dos)-90)>(as.numeric(counterdate)) & AKIcounter==x,AKIcounter+1,AKIcounter)
