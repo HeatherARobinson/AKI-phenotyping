@@ -118,10 +118,10 @@ a <-a[order(studyid, dos),]
 attach(a)
 
 dos<-as.numeric(dos)
-pb<-tkProgressBar(title="progress bar",min=0,max=max(protagonist),width=300) #indicates progress through the loop
+#pb<-tkProgressBar(title="progress bar",min=0,max=max(protagonist),width=300) #indicates progress through the loop
 
 for (i in 1:max(protagonist)) {
-setTkProgressBar(pb,i,label=paste(round(i/(max(protagonist))*100, 0),"% done"))
+#setTkProgressBar(pb,i,label=paste(round(i/(max(protagonist))*100, 0),"% done"))
 
 mightydate<-ifelse(protagonist==protagonist[i]& studyid==studyid[i],dos[i],mightydate)
 protagonistdos<-as.numeric(ave(mightydate,studyid,FUN=max))
@@ -131,30 +131,26 @@ weekmarker<-ifelse((protagonistdos-dos)<=7 & !protagonistdos==dos,1,weekmarker)
 monthmarker<-ifelse((protagonistdos-dos)<=90 &(protagonistdos-dos)>=8,1,monthmarker)
 daymarker<-ifelse((protagonistdos-dos)<=2 & !protagonistdos==dos,1,daymarker)
 
-yearvalue<-as.numeric(ifelse(yearmarker==1,stcreat,yearvalue))
-weekvalue<-as.numeric(ifelse(weekmarker==1,stcreat,weekvalue))
-monthvalue<-as.numeric(ifelse(monthmarker==1,stcreat,monthvalue))
-dayvalue<-as.numeric(ifelse(daymarker==1,stcreat,dayvalue))
-mightyvalue<-stcreat
+a$yearvalue<-as.numeric(ifelse(yearmarker==1,stcreat,yearvalue))
+a$weekvalue<-as.numeric(ifelse(weekmarker==1,stcreat,weekvalue))
+a$monthvalue<-as.numeric(ifelse(monthmarker==1,stcreat,monthvalue))
+a$dayvalue<-as.numeric(ifelse(daymarker==1,stcreat,dayvalue))
+a$mightyvalue<-ifelse(protagonist==protagonist[i]& studyid==studyid[i],stcreat,mightyvalue)
+
 }
 
 #finds the appropriate creatinine within these windows, excludes missing creatinines which would all be exceptionally high
-a$yearvalue<-yearvalue
-a$weekvalue<-weekvalue
-a$monthvalue<-monthvalue
-a$dayvalue<-dayvalue
-attach(a)
+
 ############################################################################################CHECKED 1005
 b<-a %>% group_by(studyid,protagonist) %>%
   summarise(yearmedian = median(yearvalue,na.rm=TRUE), weekmin=min(weekvalue),monthmedian=median(monthvalue,na.rm=TRUE),
   daymin=min(dayvalue),protagonistvalue=max(stcreat,na.rm=TRUE))
 a<-merge(a,b)
 attach(a)
-
+a$protagonistvalue<-as.numeric(a$protagonistvalue)
 #finds the index (investigated) creatinine of key interest, applies this value across all patient samples
-}
 
-a$AKIyear<-ifelse((protagonistvalue/yearmedian)>=1.5 & !is.na(yearmedian) & is.na(monthmedian),1,0)
+a$AKIyear<-ifelse((a$protagonistvalue/a$yearmedian)>=1.5 & !is.na(a$yearmedian) & is.na(a$monthmedian),1,0)
 #year AKI can only be tested if there is not a monthmedian already available for the sample, thus monthmedian sample needs to be missing before looking back further
 a$AKIweek<-ifelse((a$protagonistvalue/a$weekmin)>=1.5 & !is.na(a$weekmin),1,0)
 a$AKIday<-ifelse((a$protagonistvalue-a$daymin)>26 & !is.na(a$daymin),1,0)
